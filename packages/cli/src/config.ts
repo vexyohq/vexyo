@@ -1,9 +1,22 @@
+import { existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createJiti } from 'jiti';
 import { z } from 'zod';
 
 export const SPEC_VERSIONS = ['2025-11-25', '2026-07-28'] as const;
+
+/** The spec version a run targets when the config doesn't override it. */
+export const DEFAULT_SPEC_VERSION = SPEC_VERSIONS[0];
+
+/** Config filenames auto-discovered in cwd, in resolution order. */
+export const CONFIG_CANDIDATES = [
+  'vexyo.config.ts',
+  'vexyo.config.mts',
+  'vexyo.config.js',
+  'vexyo.config.mjs',
+] as const;
 
 const stdioTargetSchema = z.object({
   transport: z.literal('stdio'),
@@ -75,10 +88,63 @@ export class ConfigError extends Error {
   }
 }
 
+/**
+ * Resolve which config file to load: an explicit `--config` (relative to cwd),
+ * otherwise the first {@link CONFIG_CANDIDATES} present in cwd. Throws a
+ * {@link ConfigError} suggesting `vexyo init` when nothing is found. Returns an
+ * absolute path.
+ */
+export function resolveConfigPath(
+  explicit: string | undefined,
+  cwd: string = process.cwd(),
+): string {
+  if (explicit) {
+    return resolve(cwd, explicit);
+  }
+  for (const name of CONFIG_CANDIDATES) {
+    const candidate = resolve(cwd, name);
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  throw new ConfigError(
+    `No config file found in ${cwd}. Create one with \`vexyo init\`, or pass --config <path>.`,
+  );
+}
+
 function formatZodError(error: z.ZodError): string {
   return error.issues
     .map((issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
     .join('\n');
+}
+
+/**
+ * Map vexyo's own package specifiers to the running CLI's installation so a
+ * config that imports `@vexyo/cli/config` (defineConfig) loads even when it
+ * lives in a directory without a local `node_modules` (a bare project, `/tmp`,
+ * etc.). Resolved relative to THIS module — the CLI — not the config's location,
+ * which is the pattern vite/eslint use for their own defineConfig imports. A
+ * local install, when present, still wins (jiti prefers it over the alias).
+ */
+function selfPackageAliases(): Record<string, string> {
+  const aliases: Record<string, string> = {};
+  let req: ReturnType<typeof createRequire>;
+  try {
+    // Empty `import.meta.url` (e.g. the Action's esbuild CJS bundle) → no alias;
+    // there the CLI always runs where `@vexyo/cli` is already resolvable.
+    req = createRequire(import.meta.url);
+  } catch {
+    return aliases;
+  }
+  for (const spec of ['@vexyo/cli/config', '@vexyo/cli', '@vexyo/core', '@vexyo/reporters']) {
+    try {
+      aliases[spec] = req.resolve(spec);
+    } catch {
+      // Unresolvable from here (e.g. dev without a built dist); jiti then
+      // resolves the specifier from the config's own location instead.
+    }
+  }
+  return aliases;
 }
 
 /**
@@ -91,7 +157,7 @@ export async function loadConfig(configPath: string): Promise<Config> {
 
   let mod: unknown;
   try {
-    const jiti = createJiti(pathToFileURL(absolute).href);
+    const jiti = createJiti(pathToFileURL(absolute).href, { alias: selfPackageAliases() });
     mod = await jiti.import(absolute, { default: true });
   } catch (err) {
     throw new ConfigError(

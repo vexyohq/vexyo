@@ -1,11 +1,12 @@
 import { connectTarget, recordGoldens, writeGoldenSet } from '@vexyo/core';
-import { ConfigError, loadConfig, type Config } from '../config';
+import { ConfigError, loadConfig, resolveConfigPath, type Config } from '../config';
 import { reportHarnessError } from '../errors';
 import { resolveGoldenDir, toGoldenConfig } from '../regression';
 import { buildTarget } from '../target';
 
 export interface RecordCommandOptions {
-  config: string;
+  /** Explicit config path; when omitted, auto-discovered in cwd. */
+  config?: string;
 }
 
 /**
@@ -15,9 +16,11 @@ export interface RecordCommandOptions {
  * harness/config error.
  */
 export async function recordCommand(opts: RecordCommandOptions): Promise<0 | 2> {
+  let configPath: string;
   let config: Config;
   try {
-    config = await loadConfig(opts.config);
+    configPath = resolveConfigPath(opts.config);
+    config = await loadConfig(configPath);
   } catch (err) {
     return reportHarnessError(err);
   }
@@ -28,7 +31,7 @@ export async function recordCommand(opts: RecordCommandOptions): Promise<0 | 2> 
     );
   }
 
-  const goldenDir = resolveGoldenDir(opts.config, config.regression);
+  const goldenDir = resolveGoldenDir(configPath, config.regression);
   const goldenCfg = toGoldenConfig(config.specVersion, config.regression);
 
   const toolCount = Object.keys(goldenCfg.tools).length;

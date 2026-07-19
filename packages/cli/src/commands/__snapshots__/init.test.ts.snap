@@ -1,0 +1,73 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderConfigTemplate > http scaffold matches snapshot 1`] = `
+"import { defineConfig } from '@vexyo/cli/config';
+
+export default defineConfig({
+  specVersion: '2025-11-25',
+
+  // The MCP server under test.
+  target: {
+    transport: 'http',
+    url: 'http://127.0.0.1:3000/mcp',
+    // headers: { Authorization: 'Bearer <your-token>' },
+  },
+
+  // --- Alternative targets (uncomment one, comment out the http target above) ---
+  //
+  // Node (stdio):
+  // target: { transport: 'stdio', command: 'node', args: ['path/to/your/mcp-server.js'] },
+  //
+  // Python / other runtimes (stdio):
+  // target: { transport: 'stdio', command: 'python', args: ['-m', 'your_mcp_server'] },
+
+  // --- Regression testing (optional) ---
+  // Record golden tool outputs with \`vexyo record\`, then \`vexyo run --regression\`
+  // fails when behavior drifts.
+  // regression: {
+  //   goldenDir: 'vexyo/goldens',
+  //   normalizers: ['iso-timestamp', 'uuid'],
+  //   record: {
+  //     // greet: { cases: [{ case: 'basic', arguments: { name: 'world' } }] },
+  //   },
+  // },
+});
+"
+`;
+
+exports[`renderConfigTemplate > stdio scaffold matches snapshot 1`] = `
+"import { defineConfig } from '@vexyo/cli/config';
+
+export default defineConfig({
+  specVersion: '2025-11-25',
+
+  // The MCP server under test.
+  target: {
+    transport: 'stdio',
+    command: 'node',
+    args: ['path/to/your/mcp-server.js'],
+    // cwd: '.',
+    // env: { API_KEY: 'value' },
+  },
+
+  // --- Alternative targets (uncomment one, comment out the stdio target above) ---
+  //
+  // Python / other runtimes (stdio):
+  // target: { transport: 'stdio', command: 'python', args: ['-m', 'your_mcp_server'] },
+  //
+  // Streamable HTTP (a running server):
+  // target: { transport: 'http', url: 'http://127.0.0.1:3000/mcp' },
+
+  // --- Regression testing (optional) ---
+  // Record golden tool outputs with \`vexyo record\`, then \`vexyo run --regression\`
+  // fails when behavior drifts.
+  // regression: {
+  //   goldenDir: 'vexyo/goldens',
+  //   normalizers: ['iso-timestamp', 'uuid'],
+  //   record: {
+  //     // greet: { cases: [{ case: 'basic', arguments: { name: 'world' } }] },
+  //   },
+  // },
+});
+"
+`;
