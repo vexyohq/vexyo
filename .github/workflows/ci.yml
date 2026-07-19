@@ -51,6 +51,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Build the library dist so the config's `@vexyo/cli/config` import resolves
+      # the way it does for a real consumer (who installs @vexyo/cli with its dist).
+      - run: pnpm build:dist
+
       # Rebuild the Action bundle so we dogfood the current source. (The committed
       # dist/index.cjs is what external consumers run.)
       - run: pnpm --filter @vexyo/action build
