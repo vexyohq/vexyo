@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createJiti } from 'jiti';
@@ -118,6 +119,35 @@ function formatZodError(error: z.ZodError): string {
 }
 
 /**
+ * Map vexyo's own package specifiers to the running CLI's installation so a
+ * config that imports `@vexyo/cli/config` (defineConfig) loads even when it
+ * lives in a directory without a local `node_modules` (a bare project, `/tmp`,
+ * etc.). Resolved relative to THIS module — the CLI — not the config's location,
+ * which is the pattern vite/eslint use for their own defineConfig imports. A
+ * local install, when present, still wins (jiti prefers it over the alias).
+ */
+function selfPackageAliases(): Record<string, string> {
+  const aliases: Record<string, string> = {};
+  let req: ReturnType<typeof createRequire>;
+  try {
+    // Empty `import.meta.url` (e.g. the Action's esbuild CJS bundle) → no alias;
+    // there the CLI always runs where `@vexyo/cli` is already resolvable.
+    req = createRequire(import.meta.url);
+  } catch {
+    return aliases;
+  }
+  for (const spec of ['@vexyo/cli/config', '@vexyo/cli', '@vexyo/core', '@vexyo/reporters']) {
+    try {
+      aliases[spec] = req.resolve(spec);
+    } catch {
+      // Unresolvable from here (e.g. dev without a built dist); jiti then
+      // resolves the specifier from the config's own location instead.
+    }
+  }
+  return aliases;
+}
+
+/**
  * Load and validate a config file. Supports `.ts`/`.js`/`.mjs` via jiti so the
  * blueprint's `examples/*.config.ts` work without a build step. The default
  * export is validated against {@link configSchema}.
@@ -127,7 +157,7 @@ export async function loadConfig(configPath: string): Promise<Config> {
 
   let mod: unknown;
   try {
-    const jiti = createJiti(pathToFileURL(absolute).href);
+    const jiti = createJiti(pathToFileURL(absolute).href, { alias: selfPackageAliases() });
     mod = await jiti.import(absolute, { default: true });
   } catch (err) {
     throw new ConfigError(

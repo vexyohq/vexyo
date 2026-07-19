@@ -47604,10 +47604,20 @@ function esc2(value) {
 }
 
 // ../cli/src/config.ts
+var import_node_fs = require("node:fs");
+var import_node_module = require("node:module");
 var import_node_path2 = require("node:path");
 var import_node_url = require("node:url");
 var import_jiti = require("jiti");
+var import_meta = {};
 var SPEC_VERSIONS = ["2025-11-25", "2026-07-28"];
+var DEFAULT_SPEC_VERSION = SPEC_VERSIONS[0];
+var CONFIG_CANDIDATES = [
+  "vexyo.config.ts",
+  "vexyo.config.mts",
+  "vexyo.config.js",
+  "vexyo.config.mjs"
+];
 var stdioTargetSchema = external_exports.object({
   transport: external_exports.literal("stdio"),
   command: external_exports.string().min(1),
@@ -47659,14 +47669,44 @@ var ConfigError = class extends Error {
     this.name = "ConfigError";
   }
 };
+function resolveConfigPath(explicit, cwd = process.cwd()) {
+  if (explicit) {
+    return (0, import_node_path2.resolve)(cwd, explicit);
+  }
+  for (const name of CONFIG_CANDIDATES) {
+    const candidate = (0, import_node_path2.resolve)(cwd, name);
+    if ((0, import_node_fs.existsSync)(candidate)) {
+      return candidate;
+    }
+  }
+  throw new ConfigError(
+    `No config file found in ${cwd}. Create one with \`vexyo init\`, or pass --config <path>.`
+  );
+}
 function formatZodError(error52) {
   return error52.issues.map((issue3) => `  - ${issue3.path.join(".") || "(root)"}: ${issue3.message}`).join("\n");
+}
+function selfPackageAliases() {
+  const aliases = {};
+  let req;
+  try {
+    req = (0, import_node_module.createRequire)(import_meta.url);
+  } catch {
+    return aliases;
+  }
+  for (const spec of ["@vexyo/cli/config", "@vexyo/cli", "@vexyo/core", "@vexyo/reporters"]) {
+    try {
+      aliases[spec] = req.resolve(spec);
+    } catch {
+    }
+  }
+  return aliases;
 }
 async function loadConfig(configPath) {
   const absolute = (0, import_node_path2.resolve)(process.cwd(), configPath);
   let mod;
   try {
-    const jiti = (0, import_jiti.createJiti)((0, import_node_url.pathToFileURL)(absolute).href);
+    const jiti = (0, import_jiti.createJiti)((0, import_node_url.pathToFileURL)(absolute).href, { alias: selfPackageAliases() });
     mod = await jiti.import(absolute, { default: true });
   } catch (err) {
     throw new ConfigError(
@@ -47713,10 +47753,11 @@ function buildTarget(config2) {
 
 // ../cli/src/commands/run.ts
 async function executeRun(opts) {
-  const config2 = await loadConfig(opts.config);
+  const configPath = resolveConfigPath(opts.config);
+  const config2 = await loadConfig(configPath);
   const specVersion = resolveSpecVersion(opts.specVersion, config2);
   const failOn = resolveFailOn(opts.failOn, config2);
-  const extraChecks = await buildRegressionPhase(opts, config2, specVersion);
+  const extraChecks = await buildRegressionPhase(opts, configPath, config2, specVersion);
   return runSuite({
     specVersion,
     target: buildTarget(config2),
@@ -47736,14 +47777,14 @@ function resolveSpecVersion(override, config2) {
 function resolveFailOn(override, config2) {
   return override ?? config2.regression?.failOn ?? "error";
 }
-async function buildRegressionPhase(opts, config2, specVersion) {
+async function buildRegressionPhase(opts, configPath, config2, specVersion) {
   if (!opts.regression) {
     return void 0;
   }
   if (!config2.regression) {
     throw new ConfigError("`--regression` requires a `regression` block in the config.");
   }
-  const goldenSet = await readGoldenSet(resolveGoldenDir(opts.config, config2.regression));
+  const goldenSet = await readGoldenSet(resolveGoldenDir(configPath, config2.regression));
   const goldenCfg = toGoldenConfig(specVersion, config2.regression);
   return (ctx) => runRegression(ctx.client, goldenSet, goldenCfg);
 }
