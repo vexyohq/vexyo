@@ -14,14 +14,14 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vexyohq/vexyo.git",
+    "url": "git+https://github.com/vexyohq/vexyo.git",
     "directory": "packages/action"
   },
   "homepage": "https://github.com/vexyohq/vexyo#readme",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --platform=node --target=node20 --format=cjs --external:jiti --outfile=dist/index.cjs"
+    "build": "esbuild src/main.ts --bundle --platform=node --target=node20 --format=cjs --conditions=development --external:jiti --outfile=dist/index.cjs"
   },
   "dependencies": {
     "@actions/core": "^3.0.1",

@@ -5,8 +5,13 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@vexyo/fixture-support": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@vexyo/fixture-support": "workspace:*",
     "zod": "^4.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vexyohq/vexyo.git",
+    "directory": "fixtures/servers/broken"
   }
 }

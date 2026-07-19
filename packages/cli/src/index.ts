@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --import tsx
+#!/usr/bin/env node
 import { BRAND } from '@vexyo/core';
 import { Command } from 'commander';
 import { recordCommand } from './commands/record';
