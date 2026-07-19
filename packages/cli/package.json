@@ -14,19 +14,31 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vexyohq/vexyo.git",
+    "url": "git+https://github.com/vexyohq/vexyo.git",
     "directory": "packages/cli"
   },
   "homepage": "https://github.com/vexyohq/vexyo#readme",
-  "private": true,
+  "private": false,
   "type": "module",
   "bin": {
-    "vexyo": "./src/index.ts"
+    "vexyo": "./dist/index.js"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./config": "./src/define.ts",
-    "./api": "./src/api.ts"
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./config": {
+      "development": "./src/define.ts",
+      "types": "./dist/define.d.ts",
+      "default": "./dist/define.js"
+    },
+    "./api": {
+      "development": "./src/api.ts",
+      "types": "./dist/api.d.ts",
+      "default": "./dist/api.js"
+    }
   },
   "dependencies": {
     "@vexyo/core": "workspace:*",
@@ -34,5 +46,31 @@
     "commander": "^13.1.0",
     "jiti": "^2.4.2",
     "zod": "^4.0.0"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./config": {
+        "types": "./dist/define.d.ts",
+        "default": "./dist/define.js"
+      },
+      "./api": {
+        "types": "./dist/api.d.ts",
+        "default": "./dist/api.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "prepublishOnly": "tsup"
   }
 }

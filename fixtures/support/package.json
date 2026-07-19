@@ -10,5 +10,10 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vexyohq/vexyo.git",
+    "directory": "fixtures/support"
   }
 }

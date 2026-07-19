@@ -9,23 +9,31 @@
   },
   "scripts": {
     "build": "tsc --noEmit -p tsconfig.json",
+    "build:dist": "pnpm --filter=@vexyo/core --filter=@vexyo/reporters --filter=@vexyo/cli run build",
+    "publint": "pnpm --filter=@vexyo/core --filter=@vexyo/reporters --filter=@vexyo/cli exec publint",
     "test": "vitest run",
     "test:core": "vitest run packages/core",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "vexyo": "tsx packages/cli/src/index.ts"
+    "vexyo": "node --conditions=development --import tsx packages/cli/src/index.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
+    "@types/node": "^22.13.0",
     "@vexyo/cli": "workspace:*",
     "@vexyo/core": "workspace:*",
     "@vexyo/reporters": "workspace:*",
-    "@types/node": "^22.13.0",
     "eslint": "^9.19.0",
     "prettier": "^3.4.2",
+    "publint": "^0.3.21",
+    "tsup": "^8.5.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.23.0",
     "vitest": "^3.0.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vexyohq/vexyo.git"
   }
 }
