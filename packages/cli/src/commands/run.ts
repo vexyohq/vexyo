@@ -14,13 +14,14 @@ import {
   markdownReporter,
   type Reporter,
 } from '@vexyo/reporters';
-import { ConfigError, loadConfig, type Config } from '../config';
+import { ConfigError, loadConfig, resolveConfigPath, type Config } from '../config';
 import { reportHarnessError } from '../errors';
 import { resolveGoldenDir, toGoldenConfig } from '../regression';
 import { buildTarget } from '../target';
 
 export interface RunCommandOptions {
-  config: string;
+  /** Explicit config path; when omitted, auto-discovered in cwd. */
+  config?: string;
   specVersion?: string;
   reporter: string;
   regression?: boolean;
@@ -28,7 +29,8 @@ export interface RunCommandOptions {
 }
 
 export interface ExecuteRunOptions {
-  config: string;
+  /** Explicit config path; when omitted, auto-discovered in cwd. */
+  config?: string;
   specVersion?: string;
   regression?: boolean;
   failOn?: string;
@@ -48,10 +50,11 @@ const REPORTERS: Record<string, Reporter> = {
  * map to exit code 2. Shared by the `run` command and the GitHub Action.
  */
 export async function executeRun(opts: ExecuteRunOptions): Promise<RunResult> {
-  const config = await loadConfig(opts.config);
+  const configPath = resolveConfigPath(opts.config);
+  const config = await loadConfig(configPath);
   const specVersion = resolveSpecVersion(opts.specVersion, config);
   const failOn = resolveFailOn(opts.failOn, config);
-  const extraChecks = await buildRegressionPhase(opts, config, specVersion);
+  const extraChecks = await buildRegressionPhase(opts, configPath, config, specVersion);
 
   return runSuite({
     specVersion,
@@ -102,6 +105,7 @@ function resolveFailOn(override: string | undefined, config: Config): Severity {
 
 async function buildRegressionPhase(
   opts: ExecuteRunOptions,
+  configPath: string,
   config: Config,
   specVersion: SpecVersion,
 ): Promise<RunSuiteOptions['extraChecks']> {
@@ -111,7 +115,7 @@ async function buildRegressionPhase(
   if (!config.regression) {
     throw new ConfigError('`--regression` requires a `regression` block in the config.');
   }
-  const goldenSet = await readGoldenSet(resolveGoldenDir(opts.config, config.regression));
+  const goldenSet = await readGoldenSet(resolveGoldenDir(configPath, config.regression));
   const goldenCfg = toGoldenConfig(specVersion, config.regression);
   return (ctx) => runRegression(ctx.client, goldenSet, goldenCfg);
 }

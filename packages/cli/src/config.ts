@@ -1,9 +1,21 @@
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createJiti } from 'jiti';
 import { z } from 'zod';
 
 export const SPEC_VERSIONS = ['2025-11-25', '2026-07-28'] as const;
+
+/** The spec version a run targets when the config doesn't override it. */
+export const DEFAULT_SPEC_VERSION = SPEC_VERSIONS[0];
+
+/** Config filenames auto-discovered in cwd, in resolution order. */
+export const CONFIG_CANDIDATES = [
+  'vexyo.config.ts',
+  'vexyo.config.mts',
+  'vexyo.config.js',
+  'vexyo.config.mjs',
+] as const;
 
 const stdioTargetSchema = z.object({
   transport: z.literal('stdio'),
@@ -73,6 +85,30 @@ export class ConfigError extends Error {
     super(message, cause !== undefined ? { cause } : undefined);
     this.name = 'ConfigError';
   }
+}
+
+/**
+ * Resolve which config file to load: an explicit `--config` (relative to cwd),
+ * otherwise the first {@link CONFIG_CANDIDATES} present in cwd. Throws a
+ * {@link ConfigError} suggesting `vexyo init` when nothing is found. Returns an
+ * absolute path.
+ */
+export function resolveConfigPath(
+  explicit: string | undefined,
+  cwd: string = process.cwd(),
+): string {
+  if (explicit) {
+    return resolve(cwd, explicit);
+  }
+  for (const name of CONFIG_CANDIDATES) {
+    const candidate = resolve(cwd, name);
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  throw new ConfigError(
+    `No config file found in ${cwd}. Create one with \`vexyo init\`, or pass --config <path>.`,
+  );
 }
 
 function formatZodError(error: z.ZodError): string {
