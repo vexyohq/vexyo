@@ -1,0 +1,8 @@
+node_modules/
+dist/
+# The GitHub Action runs its committed bundle, so its dist is tracked.
+!packages/action/dist/
+!packages/action/dist/**
+*.tsbuildinfo
+.DS_Store
+coverage/

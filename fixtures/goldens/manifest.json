@@ -1,0 +1,28 @@
+{
+  "formatVersion": 1,
+  "prompts": [{ "name": "greet" }],
+  "resources": [{ "name": "readme", "uri": "vexyo://readme" }],
+  "server": { "name": "vexyo-regression-fixture", "version": "1.0.0" },
+  "specVersion": "2025-11-25",
+  "tools": [
+    {
+      "inputSchema": {
+        "properties": { "a": { "type": "number" }, "b": { "type": "number" } },
+        "required": ["a", "b"],
+        "type": "object"
+      },
+      "name": "add",
+      "title": "Add"
+    },
+    {
+      "inputSchema": {
+        "properties": { "text": { "type": "string" } },
+        "required": ["text"],
+        "type": "object"
+      },
+      "name": "echo",
+      "title": "Echo"
+    },
+    { "inputSchema": { "properties": {}, "type": "object" }, "name": "stamp", "title": "Stamp" }
+  ]
+}

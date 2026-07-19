@@ -1,0 +1,25 @@
+name: 'vexyo'
+description: 'Run vexyo MCP conformance (and regression) checks in CI, with PR annotations and a job summary.'
+branding:
+  icon: 'check-circle'
+  color: 'purple'
+inputs:
+  config:
+    description: 'Path to the vexyo config file.'
+    required: true
+  spec-version:
+    description: 'Override the MCP spec version to target (default: from config).'
+    required: false
+  regression:
+    description: 'Also diff current behavior against the recorded golden set.'
+    required: false
+    default: 'false'
+  fail-on:
+    description: 'Severity at/above which findings fail the run (error | warning).'
+    required: false
+  junit-file:
+    description: 'Write a JUnit XML report to this path (for native CI ingestion).'
+    required: false
+runs:
+  using: 'node24'
+  main: 'dist/index.cjs'

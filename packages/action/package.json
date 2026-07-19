@@ -1,0 +1,36 @@
+{
+  "name": "@vexyo/action",
+  "version": "0.0.0",
+  "description": "GitHub Action that runs vexyo MCP conformance and regression checks in CI.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "testing",
+    "conformance",
+    "regression",
+    "ci",
+    "github-action"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vexyohq/vexyo.git",
+    "directory": "packages/action"
+  },
+  "homepage": "https://github.com/vexyohq/vexyo#readme",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --platform=node --target=node20 --format=cjs --external:jiti --outfile=dist/index.cjs"
+  },
+  "dependencies": {
+    "@actions/core": "^3.0.1",
+    "@vexyo/cli": "workspace:*",
+    "@vexyo/reporters": "workspace:*",
+    "jiti": "^2.4.2",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
+  }
+}

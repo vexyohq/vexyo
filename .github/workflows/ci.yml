@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No `version:` here — package.json `packageManager` is the single source of truth.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Type-checks the whole workspace.
+      - run: pnpm build
+
+      - run: pnpm lint
+
+      # Fixture-pair tests run the full rule set over stdio AND http.
+      - run: pnpm test
+
+  # Dogfooding: run vexyo against its own fixture servers via the Action,
+  # over both transports, exactly as an external user would. Release-blocking.
+  dogfood:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        transport: [stdio, http]
+    steps:
+      - uses: actions/checkout@v4
+
+      # No `version:` here — package.json `packageManager` is the single source of truth.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Rebuild the Action bundle so we dogfood the current source. (The committed
+      # dist/index.cjs is what external consumers run.)
+      - run: pnpm --filter @vexyo/action build
+
+      # For http, start the compliant fixture as a background service and wait for
+      # it to accept connections — the Action then only connects to its URL.
+      - name: Start compliant HTTP fixture
+        if: matrix.transport == 'http'
+        run: |
+          node --import tsx fixtures/servers/compliant/src/index.ts --transport http --port 8765 &
+          for i in $(seq 1 40); do
+            if curl -s -o /dev/null http://127.0.0.1:8765/mcp; then echo "fixture ready"; exit 0; fi
+            sleep 0.5
+          done
+          echo "fixture did not become ready" && exit 1
+
+      - name: Run vexyo (${{ matrix.transport }})
+        uses: ./packages/action
+        with:
+          config: examples/ci.${{ matrix.transport }}.config.ts
+          spec-version: 2025-11-25

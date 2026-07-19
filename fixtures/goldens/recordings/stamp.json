@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "arguments": {},
+      "case": "default",
+      "normalizers": ["iso-timestamp", "uuid"],
+      "result": { "content": [{ "text": "stamped at <timestamp> id <uuid>", "type": "text" }] }
+    }
+  ],
+  "formatVersion": 1,
+  "tool": "stamp"
+}

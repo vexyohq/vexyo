@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "arguments": { "a": 2, "b": 3 },
+      "case": "basic",
+      "normalizers": ["iso-timestamp", "uuid"],
+      "result": { "content": [{ "text": "5", "type": "text" }] }
+    }
+  ],
+  "formatVersion": 1,
+  "tool": "add"
+}

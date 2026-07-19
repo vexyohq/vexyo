@@ -1,0 +1,38 @@
+{
+  "name": "@vexyo/cli",
+  "version": "0.0.0",
+  "description": "CLI for vexyo — conformance and regression testing for MCP servers, for local dev and CI.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "testing",
+    "conformance",
+    "regression",
+    "ci",
+    "cli"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vexyohq/vexyo.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/vexyohq/vexyo#readme",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "vexyo": "./src/index.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/define.ts",
+    "./api": "./src/api.ts"
+  },
+  "dependencies": {
+    "@vexyo/core": "workspace:*",
+    "@vexyo/reporters": "workspace:*",
+    "commander": "^13.1.0",
+    "jiti": "^2.4.2",
+    "zod": "^4.0.0"
+  }
+}

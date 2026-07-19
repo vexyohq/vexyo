@@ -1,0 +1,6 @@
+packages:
+  - 'packages/*'
+  - 'fixtures/servers/*'
+  - 'fixtures/support'
+allowBuilds:
+  esbuild: true
