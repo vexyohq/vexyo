@@ -5,6 +5,11 @@ import { consoleReporter } from './console';
 function sampleResult(): RunResult {
   return {
     outcome: 'completed',
+    server: {
+      negotiatedProtocolVersion: '2025-11-25',
+      serverInfo: { name: 'sample-server', version: '1.0.0' },
+      capabilities: { tools: {} },
+    },
     specVersion: '2025-11-25',
     target: { transport: 'stdio', description: 'stdio: node server.js' },
     startedAt: '2026-01-01T00:00:00.000Z',
@@ -56,5 +61,21 @@ describe('consoleReporter', () => {
     expect(out).toContain('→ Implement tools/list.');
     expect(out).toContain('Summary: 1 pass, 1 fail, 0 warn, 0 error, 0 skip (2 rules)');
     expect(out).toContain('Exit code: 1');
+  });
+
+  it('shows server identity in the header, with no note when versions match', () => {
+    const out = consoleReporter.format(sampleResult());
+    expect(out).toContain('server: sample-server 1.0.0 · protocol 2025-11-25');
+    expect(out).not.toContain('note: negotiated protocol');
+  });
+
+  it('calls out a negotiated-vs-targeted version mismatch plainly', () => {
+    const result = sampleResult();
+    result.server = { ...result.server, negotiatedProtocolVersion: '2025-03-26' };
+    const out = consoleReporter.format(result);
+    expect(out).toContain('server: sample-server 1.0.0 · protocol 2025-03-26');
+    expect(out).toContain(
+      'note: negotiated protocol 2025-03-26 differs from the targeted spec 2025-11-25',
+    );
   });
 });

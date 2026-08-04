@@ -69,13 +69,23 @@ describe('run command (against the compliant fixture)', () => {
     expect(code).toBe(2);
   });
 
-  it('marks a completed run with outcome: completed in json output', async () => {
+  it('marks a completed run with outcome: completed and full server identity in json output', async () => {
     const code = await runCommand({ config: exampleConfig, reporter: 'json' });
     expect(code).toBe(0);
     const doc = JSON.parse(String(stdout.mock.calls.at(-1)?.[0] ?? '')) as {
       outcome: string;
+      server: {
+        negotiatedProtocolVersion: string;
+        serverInfo: { name: string; version: string };
+        capabilities: Record<string, unknown>;
+        instructions?: string;
+      };
     };
     expect(doc.outcome).toBe('completed');
+    expect(doc.server.negotiatedProtocolVersion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(doc.server.serverInfo).toMatchObject({ name: 'vexyo-compliant-fixture' });
+    expect(Object.keys(doc.server.capabilities).length).toBeGreaterThan(0);
+    expect(typeof doc.server.instructions).toBe('string');
   });
 });
 

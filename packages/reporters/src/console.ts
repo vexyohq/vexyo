@@ -28,8 +28,18 @@ export const consoleReporter: Reporter = {
   name: 'console',
   format(result: RunResult): string {
     const lines: string[] = [];
+    const { server } = result;
     lines.push(`vexyo — MCP spec ${result.specVersion}`);
     lines.push(`target: ${result.target.description}`);
+    lines.push(
+      `server: ${server.serverInfo.name} ${server.serverInfo.version} · protocol ${server.negotiatedProtocolVersion}`,
+    );
+    if (server.negotiatedProtocolVersion !== result.specVersion) {
+      lines.push(
+        `note: negotiated protocol ${server.negotiatedProtocolVersion} differs from the targeted ` +
+          `spec ${result.specVersion} — findings may reflect the version gap, not real violations`,
+      );
+    }
     lines.push('');
 
     for (const [category, rules] of groupByCategory(result.results)) {

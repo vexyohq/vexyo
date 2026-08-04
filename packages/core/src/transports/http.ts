@@ -2,6 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { BRAND } from '../brand';
 import { TargetConnectionError } from './errors';
+import { captureNegotiatedProtocolVersion } from './protocol-version';
 import type { ConnectedClient, HttpTargetConfig } from './types';
 
 export type { HttpTargetConfig } from './types';
@@ -25,6 +26,10 @@ export async function connectHttp(target: HttpTargetConfig): Promise<ConnectedCl
   const transport = new StreamableHTTPClientTransport(url, {
     requestInit: target.headers ? { headers: target.headers } : undefined,
   });
+
+  // Chains the transport's own setProtocolVersion (which stamps subsequent
+  // request headers), recording the negotiated version on the way through.
+  const negotiatedProtocolVersion = captureNegotiatedProtocolVersion(transport, 'http target');
 
   const client = new Client(
     { name: `${BRAND.name}-probe`, version: '0.0.0' },
@@ -53,6 +58,7 @@ export async function connectHttp(target: HttpTargetConfig): Promise<ConnectedCl
   return {
     client,
     transport: { kind: 'http', sessionId: transport.sessionId },
+    negotiatedProtocolVersion: negotiatedProtocolVersion(),
     close: async () => {
       await client.close();
     },

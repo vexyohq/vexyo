@@ -6,6 +6,7 @@ export type {
   RunResult,
   RunSummary,
   RunTarget,
+  ServerIdentity,
   Severity,
   SpecVersion,
 } from './types';
