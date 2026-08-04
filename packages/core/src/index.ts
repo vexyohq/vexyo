@@ -20,6 +20,8 @@ export { runSuite, runRules, summarizeResults, computeExitCode } from './runner'
 export type { RunSuiteOptions } from './runner';
 
 export { connectStdio, connectHttp, connectTarget } from './transports/index';
+export { TargetConnectionError } from './transports/errors';
+export type { StderrSnapshot } from './transports/stderr';
 export type {
   ConnectedClient,
   ConnectTarget,

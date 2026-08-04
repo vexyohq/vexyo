@@ -4,6 +4,7 @@ import { annotate } from './annotate';
 
 function result(): RunResult {
   return {
+    outcome: 'completed',
     specVersion: '2025-11-25',
     target: { transport: 'stdio', description: 'x' },
     startedAt: 'a',

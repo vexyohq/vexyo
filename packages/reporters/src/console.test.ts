@@ -4,6 +4,7 @@ import { consoleReporter } from './console';
 
 function sampleResult(): RunResult {
   return {
+    outcome: 'completed',
     specVersion: '2025-11-25',
     target: { transport: 'stdio', description: 'stdio: node server.js' },
     startedAt: '2026-01-01T00:00:00.000Z',

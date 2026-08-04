@@ -1,4 +1,5 @@
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import type { StderrSnapshot } from './stderr';
 
 /** Which transport a connection uses, plus transport-specific facts rules may inspect. */
 export type TransportInfo = { kind: 'stdio' } | { kind: 'http'; sessionId?: string };
@@ -24,6 +25,11 @@ export type ConnectTarget =
 export interface ConnectedClient {
   client: Client;
   transport: TransportInfo;
+  /**
+   * Snapshot of the captured child-stderr tail (stdio only; absent for http).
+   * Callable at any point, including after `close()`.
+   */
+  serverStderr?: () => StderrSnapshot;
   /** Closes the client connection (and, for stdio, the spawned server process). */
   close: () => Promise<void>;
 }

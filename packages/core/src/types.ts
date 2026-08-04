@@ -79,6 +79,13 @@ export interface RunSummary {
 }
 
 export interface RunResult {
+  /**
+   * Discriminator against the CLI's launch-failure JSON document (`outcome:
+   * 'launch-failure'`): a RunResult always means the suite actually ran.
+   * Required on purpose — an optional field would leave consumers handling
+   * `undefined`, which is the ambiguity it exists to remove.
+   */
+  outcome: 'completed';
   specVersion: SpecVersion;
   target: RunTarget;
   /** ISO-8601 timestamps. */
@@ -86,6 +93,15 @@ export interface RunResult {
   finishedAt: string;
   results: RuleResult[];
   summary: RunSummary;
-  /** 0 = pass, 1 = findings at/above threshold, 2 = harness/config error. */
+  /**
+   * 0 = pass, 1 = findings at/above threshold. (2 is vestigial: harness/config
+   * errors throw before a RunResult exists and exit 2; a target that failed to
+   * start throws {@link TargetConnectionError} and exits 3.)
+   */
   exitCode: 0 | 1 | 2;
+  /**
+   * Captured tail of the stdio child's stderr (never inherited). Present only
+   * for stdio targets that wrote to stderr.
+   */
+  serverStderr?: { text: string; truncated: boolean };
 }

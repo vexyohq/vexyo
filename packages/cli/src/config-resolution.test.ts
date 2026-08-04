@@ -27,6 +27,7 @@ describe('config loader resolves vexyo self-imports from the CLI, not the config
     );
 
     let output = '';
+    let status: number | undefined;
     try {
       execFileSync(process.execPath, [cliDist, 'run'], {
         cwd: dir,
@@ -34,14 +35,17 @@ describe('config loader resolves vexyo self-imports from the CLI, not the config
         stdio: 'pipe',
       });
     } catch (err) {
-      const e = err as { stdout?: string; stderr?: string };
+      const e = err as { stdout?: string; stderr?: string; status?: number };
       output = `${e.stdout ?? ''}${e.stderr ?? ''}`;
+      status = e.status;
     }
 
     // The self-import resolved (no module-resolution failure) and target parsing
-    // proceeded to an actual connection attempt against the (missing) command.
+    // proceeded to an actual connection attempt against the (missing) command —
+    // which is a target-launch failure: exit 3, not a config error.
     expect(output).not.toContain("Cannot find module '@vexyo/cli/config'");
     expect(output).not.toContain('Could not load config file');
-    expect(output).toMatch(/Failed to connect|__vexyo_missing_binary__/);
+    expect(output).toMatch(/failed to start|__vexyo_missing_binary__/);
+    expect(status).toBe(3);
   });
 });

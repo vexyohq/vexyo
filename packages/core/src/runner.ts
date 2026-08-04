@@ -30,8 +30,9 @@ const SEVERITY_RANK: Record<Severity, number> = { info: 1, warning: 2, error: 3 
 /**
  * Connect to the target server, run every rule for the requested spec version
  * (plus any extra checks), and assemble a {@link RunResult}. Connection/
- * handshake failures throw (the CLI maps them to exit code 2); per-rule
- * failures are captured as findings.
+ * handshake failures throw a `TargetConnectionError` (the CLI maps it to exit
+ * code 3; other harness/config errors map to 2); per-rule failures are
+ * captured as findings.
  */
 export async function runSuite(opts: RunSuiteOptions): Promise<RunResult> {
   const startedAt = new Date().toISOString();
@@ -58,7 +59,10 @@ export async function runSuite(opts: RunSuiteOptions): Promise<RunResult> {
   }
 
   const finishedAt = new Date().toISOString();
+  // Snapshot after close() so shutdown-time stderr is included; omit when empty.
+  const stderr = conn.serverStderr?.();
   return {
+    outcome: 'completed',
     specVersion: opts.specVersion,
     target,
     startedAt,
@@ -66,6 +70,7 @@ export async function runSuite(opts: RunSuiteOptions): Promise<RunResult> {
     results,
     summary: summarizeResults(results),
     exitCode: computeExitCode(results, failOn),
+    ...(stderr && stderr.text !== '' ? { serverStderr: stderr } : {}),
   };
 }
 

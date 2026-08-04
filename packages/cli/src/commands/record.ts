@@ -1,21 +1,23 @@
-import { connectTarget, recordGoldens, writeGoldenSet } from '@vexyo/core';
+import { connectTarget, recordGoldens, TargetConnectionError, writeGoldenSet } from '@vexyo/core';
 import { ConfigError, loadConfig, resolveConfigPath, type Config } from '../config';
-import { reportHarnessError } from '../errors';
+import { formatStderrBlock, reportHarnessError, reportLaunchFailure } from '../errors';
 import { resolveGoldenDir, toGoldenConfig } from '../regression';
 import { buildTarget } from '../target';
 
 export interface RecordCommandOptions {
   /** Explicit config path; when omitted, auto-discovered in cwd. */
   config?: string;
+  /** Print the target's captured stderr after recording. */
+  verbose?: boolean;
 }
 
 /**
  * Capture golden files. Connects over the configured transport, snapshots the
  * schema manifest (read-only), and calls only the tools explicitly listed in
- * `regression.record` — never "call everything". Returns 0 on success, 2 on any
- * harness/config error.
+ * `regression.record` — never "call everything". Returns 0 on success, 2 on a
+ * harness/config error, 3 when the target server failed to start.
  */
-export async function recordCommand(opts: RecordCommandOptions): Promise<0 | 2> {
+export async function recordCommand(opts: RecordCommandOptions): Promise<0 | 2 | 3> {
   let configPath: string;
   let config: Config;
   try {
@@ -45,7 +47,9 @@ export async function recordCommand(opts: RecordCommandOptions): Promise<0 | 2> 
   try {
     conn = await connectTarget(buildTarget(config));
   } catch (err) {
-    return reportHarnessError(err);
+    return err instanceof TargetConnectionError
+      ? reportLaunchFailure(err)
+      : reportHarnessError(err);
   }
 
   try {
@@ -60,5 +64,9 @@ export async function recordCommand(opts: RecordCommandOptions): Promise<0 | 2> 
     return reportHarnessError(err);
   } finally {
     await conn.close().catch(() => undefined);
+    const stderr = conn.serverStderr?.();
+    if (opts.verbose && stderr && stderr.text !== '') {
+      process.stderr.write(formatStderrBlock(stderr.text, stderr.truncated));
+    }
   }
 }
