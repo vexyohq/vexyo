@@ -69,8 +69,14 @@ ${alternatives}
   // regression: {
   //   goldenDir: 'vexyo/goldens',
   //   normalizers: ['iso-timestamp', 'uuid'],
+  //   // Scope a normalizer to one JSON path (copy the path from a drift report),
+  //   // or exclude a path from comparison entirely. Custom { name, apply }
+  //   // normalizers must be idempotent — they re-run against stored goldens.
+  //   // paths: { 'content[0].text': 'uuid' },
+  //   // ignore: ['meta.elapsedMs'],
   //   record: {
   //     // greet: { cases: [{ case: 'basic', arguments: { name: 'world' } }] },
+  //     // Per-tool overrides: greet: { cases: [...], paths: {...}, ignore: [...] },
   //   },
   // },
 });

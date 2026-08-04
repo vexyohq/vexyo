@@ -12,10 +12,17 @@ export function toGoldenConfig(specVersion: string, regression: RegressionConfig
   return {
     specVersion,
     defaultNormalizers: regression.normalizers,
+    defaultPaths: regression.paths,
+    defaultIgnore: regression.ignore,
     tools: Object.fromEntries(
       Object.entries(regression.record).map(([name, spec]) => [
         name,
-        { cases: spec.cases, normalizers: spec.normalizers },
+        {
+          cases: spec.cases,
+          normalizers: spec.normalizers,
+          paths: spec.paths,
+          ignore: spec.ignore,
+        },
       ]),
     ),
   };

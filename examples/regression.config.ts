@@ -21,6 +21,11 @@ export default defineConfig({
     // Committed golden set lives under fixtures/ so tests can read it.
     goldenDir: '../fixtures/goldens',
     normalizers: ['iso-timestamp', 'uuid'],
+    // Path-scoped rules (kept commented here so the committed goldens stay put):
+    // scope a normalizer to one JSON path — the syntax matches drift-report
+    // paths — or exclude a path from comparison entirely.
+    // paths: { 'structuredContent.items[*].id': 'uuid' },
+    // ignore: ['meta.elapsedMs'],
     record: {
       echo: { cases: [{ case: 'basic', arguments: { text: 'hello' } }] },
       add: { cases: [{ case: 'basic', arguments: { a: 2, b: 3 } }] },
