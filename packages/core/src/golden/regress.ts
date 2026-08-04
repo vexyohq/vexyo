@@ -10,7 +10,8 @@ import type { Finding, RuleResult, Severity, SpecVersion } from '../types';
 import type { GoldenConfig } from './config';
 import { diffValue } from './diff';
 import type { GoldenCase, GoldenSet, RegressionDetail, RegressionKind } from './format';
-import { applyNormalizers, type NormalizerRef, suggestNormalizer } from './normalize';
+import { suggestNormalizer } from './normalize';
+import { buildPipeline, effectivePipelineSpec } from './pipeline';
 import { jsonEqual } from './serialize';
 
 const SPEC_REF = 'Regression / Golden set';
@@ -54,9 +55,9 @@ export async function runRegression(
     if (!liveToolNames.has(recording.tool)) {
       continue; // removal is already reported as coverage drift
     }
-    const refs = cfg.tools[recording.tool]?.normalizers ?? cfg.defaultNormalizers;
+    const pipeline = buildPipeline(effectivePipelineSpec(cfg, recording.tool));
     for (const testCase of recording.cases) {
-      results.push(await behavioralDrift(client, specVersion, recording.tool, testCase, refs));
+      results.push(await behavioralDrift(client, specVersion, recording.tool, testCase, pipeline));
     }
   }
 
@@ -137,7 +138,7 @@ async function behavioralDrift(
   specVersion: SpecVersion,
   tool: string,
   testCase: GoldenCase,
-  refs: readonly NormalizerRef[],
+  pipeline: (value: unknown) => unknown,
 ): Promise<RuleResult> {
   let liveNormalized: unknown;
   try {
@@ -145,12 +146,15 @@ async function behavioralDrift(
       { method: 'tools/call', params: { name: tool, arguments: testCase.arguments } },
       anyResult,
     );
-    liveNormalized = applyNormalizers(raw, refs);
+    liveNormalized = pipeline(raw);
   } catch (err) {
-    liveNormalized = { error: err instanceof Error ? err.message : String(err) };
+    liveNormalized = pipeline({ error: err instanceof Error ? err.message : String(err) });
   }
 
-  const fieldDiffs = diffValue(testCase.result, liveNormalized);
+  // The stored golden is pipelined too (normalizers are idempotent), so a
+  // normalizer or ignore added AFTER recording still applies — no re-record.
+  const goldenNormalized = pipeline(testCase.result);
+  const fieldDiffs = diffValue(goldenNormalized, liveNormalized);
   if (fieldDiffs.length === 0) {
     return passResult(specVersion, tool, testCase.case);
   }
@@ -166,7 +170,7 @@ async function behavioralDrift(
       kind: 'behavioral',
       target: { type: 'tool', name: tool, case: testCase.case },
       change: 'changed',
-      before: testCase.result,
+      before: goldenNormalized,
       after: liveNormalized,
       fieldDiffs,
       suggestedNormalizers: suggested.length > 0 ? suggested : undefined,

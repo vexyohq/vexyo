@@ -23,6 +23,7 @@
       "name": "echo",
       "title": "Echo"
     },
+    { "inputSchema": { "properties": {}, "type": "object" }, "name": "report", "title": "Report" },
     { "inputSchema": { "properties": {}, "type": "object" }, "name": "stamp", "title": "Stamp" }
   ]
 }

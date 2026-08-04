@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,7 +9,9 @@ import {
   recordGoldens,
   runRegression,
   stableStringify,
+  writeGoldenSet,
   type GoldenConfig,
+  type GoldenSet,
   type RegressionDetail,
   type RuleResult,
 } from '../../src/index';
@@ -22,10 +24,27 @@ const goldenDir = resolve(repoRoot, 'fixtures/goldens');
 const cfg: GoldenConfig = {
   specVersion: '2025-11-25',
   defaultNormalizers: ['iso-timestamp', 'uuid'],
+  defaultPaths: {},
+  defaultIgnore: [],
   tools: {
     echo: { cases: [{ case: 'basic', arguments: { text: 'hello' } }] },
     add: { cases: [{ case: 'basic', arguments: { a: 2, b: 3 } }] },
     stamp: { cases: [{ case: 'default', arguments: {} }] },
+  },
+};
+
+/** `report` mixes volatile paths with stable fields — no whole-tree normalizers. */
+const reportCfg: GoldenConfig = {
+  specVersion: '2025-11-25',
+  defaultNormalizers: [],
+  defaultPaths: {},
+  defaultIgnore: [],
+  tools: {
+    report: {
+      cases: [{ case: 'default', arguments: {} }],
+      paths: { 'structuredContent.items[*].id': 'uuid' },
+      ignore: ['meta.elapsedMs'],
+    },
   },
 };
 
@@ -94,6 +113,69 @@ describe('regression drift detection (fixture pairs)', () => {
     expect(detail.kind).toBe('coverage');
     expect(detail.change).toBe('added');
     expect(result.status).toBe('warn');
+  });
+});
+
+describe('path-scoped normalizers and ignored paths', () => {
+  async function recordWith(config: GoldenConfig): Promise<GoldenSet> {
+    return withClient('none', (client) => recordGoldens(client, config));
+  }
+
+  it('no false drift across processes: volatile paths normalized, ignored path skipped', async () => {
+    const golden = await recordWith(reportCfg);
+    // Fresh server process → new uuids and a new elapsedMs on every call.
+    const results = await withClient('none', (client) => runRegression(client, golden, reportCfg));
+    expect(results.filter((r) => r.status !== 'pass')).toEqual([]);
+  });
+
+  it('the golden itself carries the placeholder, not the volatile values', async () => {
+    const golden = await recordWith(reportCfg);
+    const recorded = stableStringify(golden.recordings);
+    expect(recorded).toContain('<uuid>');
+    expect(recorded).toContain('<ignored>');
+    expect(recorded).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}/); // no raw uuid survived
+  });
+
+  it('real drift on a non-normalized field is still caught, at the right path', async () => {
+    const golden = await recordWith(reportCfg);
+    const { result, detail } = soleDrift(
+      await withClient('report-output-changed', (client) =>
+        runRegression(client, golden, reportCfg),
+      ),
+    );
+    expect(detail.kind).toBe('behavioral');
+    expect(result.status).toBe('fail');
+    const paths = detail.fieldDiffs?.map((d) => d.path) ?? [];
+    expect(paths).toContain('structuredContent.summary');
+    expect(paths.every((p) => !p.includes('items') && !p.includes('elapsedMs'))).toBe(true);
+  });
+
+  it('rules added AFTER recording apply without a re-record (both sides pipelined)', async () => {
+    // Record with NO rules: the golden holds raw uuids and a raw elapsedMs.
+    const rawCfg: GoldenConfig = {
+      ...reportCfg,
+      tools: { report: { cases: [{ case: 'default', arguments: {} }] } },
+    };
+    const golden = await recordWith(rawCfg);
+    // Regress with the rules present — old golden, new config, no drift.
+    const results = await withClient('none', (client) => runRegression(client, golden, reportCfg));
+    expect(results.filter((r) => r.status !== 'pass')).toEqual([]);
+  });
+
+  it('a config without the new options records byte-identical goldens (backward compat)', async () => {
+    const golden = await recordWith(cfg);
+    const dir = await mkdtemp(join(tmpdir(), 'mcph-bytes-'));
+    await writeGoldenSet(dir, golden);
+    for (const file of [
+      'manifest.json',
+      'recordings/echo.json',
+      'recordings/add.json',
+      'recordings/stamp.json',
+    ]) {
+      const fresh = await readFile(join(dir, file), 'utf8');
+      const committed = await readFile(join(goldenDir, file), 'utf8');
+      expect(fresh, file).toBe(committed);
+    }
   });
 });
 

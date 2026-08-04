@@ -13,7 +13,7 @@ import {
   type GoldenRecording,
   type GoldenSet,
 } from './format';
-import { applyNormalizers, normalizerName, type NormalizerRef } from './normalize';
+import { buildPipeline, describePipeline, effectivePipelineSpec } from './pipeline';
 
 /**
  * Capture a golden set from a connected server: a schema manifest (always safe —
@@ -30,7 +30,9 @@ export async function recordGoldens(client: Client, cfg: GoldenConfig): Promise<
     if (!toolSpec) {
       continue;
     }
-    const refs: NormalizerRef[] = toolSpec.normalizers ?? cfg.defaultNormalizers;
+    const pipelineSpec = effectivePipelineSpec(cfg, tool);
+    const pipeline = buildPipeline(pipelineSpec);
+    const pipelineNames = describePipeline(pipelineSpec);
     const cases = [];
     for (const spec of [...toolSpec.cases].sort((a, b) => compare(a.case, b.case))) {
       const raw = await client.request(
@@ -40,8 +42,8 @@ export async function recordGoldens(client: Client, cfg: GoldenConfig): Promise<
       cases.push({
         case: spec.case,
         arguments: spec.arguments,
-        normalizers: refs.map(normalizerName),
-        result: applyNormalizers(raw, refs),
+        normalizers: pipelineNames,
+        result: pipeline(raw),
       });
     }
     recordings.push({ formatVersion: GOLDEN_FORMAT_VERSION, tool, cases });

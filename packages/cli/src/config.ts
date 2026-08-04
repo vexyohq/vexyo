@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createJiti } from 'jiti';
+import { parsePath } from '@vexyo/core';
 import { z } from 'zod';
 
 export const SPEC_VERSIONS = ['2025-11-25', '2026-07-28'] as const;
@@ -49,9 +50,43 @@ const recordCaseSchema = z.object({
   arguments: z.record(z.string(), z.unknown()).default({}),
 });
 
+/** Returns the parse error for a result path, or null if it is valid. */
+function pathSyntaxError(path: string): string | null {
+  try {
+    parsePath(path);
+    return null;
+  } catch (err) {
+    return err instanceof Error ? err.message : String(err);
+  }
+}
+
+/** Path-scoped normalizers: `{ 'items[*].id': 'uuid' }` (value may be a list). */
+const pathNormalizersSchema = z
+  .record(z.string(), z.union([normalizerRefSchema, z.array(normalizerRefSchema)]))
+  .superRefine((record, ctx) => {
+    for (const key of Object.keys(record)) {
+      const message = pathSyntaxError(key);
+      if (message !== null) {
+        ctx.addIssue({ code: 'custom', path: [key], message });
+      }
+    }
+  });
+
+/** A single ignored result path (`meta.elapsedMs`). */
+const ignorePathSchema = z.string().superRefine((value, ctx) => {
+  const message = pathSyntaxError(value);
+  if (message !== null) {
+    ctx.addIssue({ code: 'custom', message });
+  }
+});
+
 const recordToolSchema = z.object({
   cases: z.array(recordCaseSchema).min(1),
   normalizers: z.array(normalizerRefSchema).optional(),
+  /** Path-scoped normalizers for this tool; overrides the defaults. */
+  paths: pathNormalizersSchema.optional(),
+  /** Paths excluded from comparison for this tool; overrides the defaults. */
+  ignore: z.array(ignorePathSchema).optional(),
 });
 
 const regressionSchema = z.object({
@@ -61,6 +96,10 @@ const regressionSchema = z.object({
   failOn: z.enum(['error', 'warning']).default('error'),
   /** Default normalizers applied to every recorded tool. */
   normalizers: z.array(normalizerRefSchema).default([]),
+  /** Default path-scoped normalizers applied to every recorded tool. */
+  paths: pathNormalizersSchema.default({}),
+  /** Default ignored paths applied to every recorded tool. */
+  ignore: z.array(ignorePathSchema).default([]),
   /** Tools to record/compare, keyed by name. Empty = record nothing (opt-in). */
   record: z.record(z.string(), recordToolSchema).default({}),
 });

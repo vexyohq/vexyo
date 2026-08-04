@@ -40,6 +40,15 @@ export {
   suggestNormalizer,
 } from './golden/normalize';
 export type { NormalizerFn, NormalizerObject, NormalizerRef } from './golden/normalize';
+export { applyAtPath, parsePath } from './golden/path';
+export type { PathSegment } from './golden/path';
+export {
+  IGNORED_PLACEHOLDER,
+  buildPipeline,
+  describePipeline,
+  effectivePipelineSpec,
+} from './golden/pipeline';
+export type { PipelineSpec } from './golden/pipeline';
 export type { GoldenCaseSpec, GoldenConfig, GoldenToolSpec } from './golden/config';
 export {
   GOLDEN_FORMAT_VERSION,

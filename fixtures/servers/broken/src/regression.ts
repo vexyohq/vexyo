@@ -3,14 +3,17 @@
  * baseline the committed goldens are recorded from; each other defect produces
  * exactly one drift class. Runnable over stdio or HTTP.
  *
- *   --defect none                → baseline (record goldens from this)
- *   --defect tool-output-changed → behavioral drift (echo output differs)
- *   --defect tool-schema-changed → schema drift (echo inputSchema type flipped)
- *   --defect tool-removed        → coverage drift (removed): `add` disappears
- *   --defect tool-added          → coverage drift (added): extra `search` tool
+ *   --defect none                  → baseline (record goldens from this)
+ *   --defect tool-output-changed   → behavioral drift (echo output differs)
+ *   --defect tool-schema-changed   → schema drift (echo inputSchema type flipped)
+ *   --defect tool-removed          → coverage drift (removed): `add` disappears
+ *   --defect tool-added            → coverage drift (added): extra `search` tool
+ *   --defect report-output-changed → behavioral drift on `report`'s STABLE field
  *
  * `stamp` returns a fresh timestamp + uuid on every call, exercising the
  * normalizers: its golden is stable only because they collapse both values.
+ * `report` mixes volatile fields at specific paths (`structuredContent.items[*].id`,
+ * `meta.elapsedMs`) with stable ones, exercising path-scoped normalizers/ignores.
  */
 import { randomUUID } from 'node:crypto';
 import { serve } from '@vexyo/fixture-support';
@@ -35,6 +38,11 @@ const addDef = {
   },
 };
 const stampDef = { name: 'stamp', title: 'Stamp', inputSchema: { type: 'object', properties: {} } };
+const reportDef = {
+  name: 'report',
+  title: 'Report',
+  inputSchema: { type: 'object', properties: {} },
+};
 const searchDef = {
   name: 'search',
   title: 'Search',
@@ -58,7 +66,7 @@ export function createServer(defect: string): Server {
   };
 
   server.setRequestHandler(ListToolsRequestSchema, () => {
-    const tools = [echoDef, stampDef];
+    const tools = [echoDef, stampDef, reportDef];
     if (defect !== 'tool-removed') {
       tools.push(addDef);
     }
@@ -99,6 +107,20 @@ export function createServer(defect: string): Server {
         content: [
           { type: 'text', text: `stamped at ${new Date().toISOString()} id ${randomUUID()}` },
         ],
+      });
+    }
+    if (name === 'report') {
+      const summary = defect === 'report-output-changed' ? 'ok (changed)' : 'ok';
+      return raw({
+        content: [{ type: 'text', text: summary }],
+        structuredContent: {
+          items: [
+            { id: randomUUID(), label: 'alpha' },
+            { id: randomUUID(), label: 'beta' },
+          ],
+          summary,
+        },
+        meta: { elapsedMs: performance.now() },
       });
     }
     throw new McpError(ErrorCode.InvalidParams, `Unknown tool: ${name}`);

@@ -2,6 +2,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { configSchema, loadConfig } from './config';
+import { toGoldenConfig } from './regression';
 
 describe('configSchema', () => {
   it('accepts a stdio target and applies defaults', () => {
@@ -59,5 +60,113 @@ describe('regression config', () => {
   it('is optional', () => {
     const parsed = configSchema.parse({ target: { transport: 'stdio', command: 'node' } });
     expect(parsed.regression).toBeUndefined();
+  });
+
+  it('accepts paths and ignore at both levels', () => {
+    const parsed = configSchema.parse({
+      target: { transport: 'stdio', command: 'node' },
+      regression: {
+        paths: { 'content[*].text': 'uuid' },
+        ignore: ['meta.elapsedMs'],
+        record: {
+          report: {
+            cases: [{ case: 'default' }],
+            paths: { 'structuredContent.items[*].id': ['uuid', 'hex-id'] },
+            ignore: ['meta.debug'],
+          },
+        },
+      },
+    });
+    expect(parsed.regression?.paths).toEqual({ 'content[*].text': 'uuid' });
+    expect(parsed.regression?.ignore).toEqual(['meta.elapsedMs']);
+    expect(parsed.regression?.record['report']?.paths).toEqual({
+      'structuredContent.items[*].id': ['uuid', 'hex-id'],
+    });
+    expect(parsed.regression?.record['report']?.ignore).toEqual(['meta.debug']);
+  });
+
+  it('defaults paths/ignore to empty', () => {
+    const parsed = configSchema.parse({
+      target: { transport: 'stdio', command: 'node' },
+      regression: {},
+    });
+    expect(parsed.regression?.paths).toEqual({});
+    expect(parsed.regression?.ignore).toEqual([]);
+  });
+
+  it('rejects a malformed path key with the offending path in the issue', () => {
+    const result = configSchema.safeParse({
+      target: { transport: 'stdio', command: 'node' },
+      regression: { paths: { 'a..b': 'uuid' } },
+    });
+    expect(result.success).toBe(false);
+    const issue = result.success ? undefined : result.error.issues[0];
+    expect(issue?.path.join('.')).toBe('regression.paths.a..b');
+    expect(issue?.message).toMatch(/Invalid result path/);
+  });
+
+  it('rejects a malformed ignore entry', () => {
+    const result = configSchema.safeParse({
+      target: { transport: 'stdio', command: 'node' },
+      regression: { ignore: ['items['] },
+    });
+    expect(result.success).toBe(false);
+    expect(result.success ? '' : result.error.issues[0]?.message).toMatch(/unclosed/);
+  });
+});
+
+describe('toGoldenConfig', () => {
+  it('threads paths and ignore at both levels', () => {
+    const parsed = configSchema.parse({
+      target: { transport: 'stdio', command: 'node' },
+      regression: {
+        normalizers: ['iso-timestamp'],
+        paths: { 'content[*].text': 'uuid' },
+        ignore: ['meta.elapsedMs'],
+        record: {
+          report: {
+            cases: [{ case: 'default' }],
+            paths: { 'items[*].id': 'hex-id' },
+            ignore: ['meta.debug'],
+          },
+        },
+      },
+    });
+    if (!parsed.regression) {
+      throw new Error('expected a regression block');
+    }
+    const golden = toGoldenConfig('2025-11-25', parsed.regression);
+    expect(golden.defaultPaths).toEqual({ 'content[*].text': 'uuid' });
+    expect(golden.defaultIgnore).toEqual(['meta.elapsedMs']);
+    expect(golden.tools['report']?.paths).toEqual({ 'items[*].id': 'hex-id' });
+    expect(golden.tools['report']?.ignore).toEqual(['meta.debug']);
+  });
+
+  it('backward compat: a config without the new options maps to empty defaults', () => {
+    const parsed = configSchema.parse({
+      target: { transport: 'stdio', command: 'node' },
+      regression: {
+        normalizers: ['uuid'],
+        record: { echo: { cases: [{ case: 'basic', arguments: { text: 'hi' } }] } },
+      },
+    });
+    if (!parsed.regression) {
+      throw new Error('expected a regression block');
+    }
+    const golden = toGoldenConfig('2025-11-25', parsed.regression);
+    expect(golden).toEqual({
+      specVersion: '2025-11-25',
+      defaultNormalizers: ['uuid'],
+      defaultPaths: {},
+      defaultIgnore: [],
+      tools: {
+        echo: {
+          cases: [{ case: 'basic', arguments: { text: 'hi' } }],
+          normalizers: undefined,
+          paths: undefined,
+          ignore: undefined,
+        },
+      },
+    });
   });
 });
