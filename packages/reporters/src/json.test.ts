@@ -4,6 +4,7 @@ import { jsonReporter } from './json';
 
 function sampleResult(): RunResult {
   return {
+    outcome: 'completed',
     specVersion: '2025-11-25',
     target: { transport: 'stdio', description: 'stdio: node server.js' },
     startedAt: '2026-01-01T00:00:00.000Z',
@@ -34,5 +35,15 @@ describe('jsonReporter', () => {
     expect(parsed.specVersion).toBe('2025-11-25');
     expect(parsed.results[0]?.ruleId).toBe('discovery/tools-list-available');
     expect(parsed.exitCode).toBe(0);
+    expect(parsed.outcome).toBe('completed');
+  });
+
+  it('passes captured server stderr through when present', () => {
+    const result: RunResult = {
+      ...sampleResult(),
+      serverStderr: { text: 'warning: something\n', truncated: true },
+    };
+    const parsed: RunResult = JSON.parse(jsonReporter.format(result));
+    expect(parsed.serverStderr).toEqual({ text: 'warning: something\n', truncated: true });
   });
 });

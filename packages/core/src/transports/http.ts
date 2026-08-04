@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { BRAND } from '../brand';
+import { TargetConnectionError } from './errors';
 import type { ConnectedClient, HttpTargetConfig } from './types';
 
 export type { HttpTargetConfig } from './types';
@@ -34,11 +35,19 @@ export async function connectHttp(target: HttpTargetConfig): Promise<ConnectedCl
     await client.connect(transport);
   } catch (err) {
     await transport.close().catch(() => undefined);
-    throw new Error(
-      `Failed to connect to an MCP server over Streamable HTTP (url: ${target.url}). ` +
+    // Same triage class as a failed stdio launch ("vexyo could not reach the
+    // target" → exit 3); the malformed-URL throw above stays a plain error —
+    // that one is a config mistake (exit 2).
+    throw new TargetConnectionError({
+      message:
+        `The target MCP server is unreachable (url: ${target.url}). ` +
         'Check that the server is running and the URL points at its MCP endpoint.',
-      { cause: err },
-    );
+      transport: 'http',
+      targetDescription: `http: ${target.url}`,
+      stderr: '',
+      truncated: false,
+      cause: err,
+    });
   }
 
   return {

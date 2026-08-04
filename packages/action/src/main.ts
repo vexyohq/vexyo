@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import * as core from '@actions/core';
-import { executeRun } from '@vexyo/cli/api';
+import { executeRun, formatStderrBlock, TargetConnectionError } from '@vexyo/cli/api';
 import { junitReporter, markdownReporter } from '@vexyo/reporters';
 import { annotate } from './annotate';
 import { parseInputs } from './inputs';
@@ -49,5 +49,11 @@ export async function run(): Promise<void> {
 }
 
 run().catch((err: unknown) => {
+  if (err instanceof TargetConnectionError) {
+    // The target never ran — surface its stderr, the only diagnostic there is.
+    core.info(formatStderrBlock(err.stderr, err.truncated));
+    core.setFailed(err.message);
+    return;
+  }
   core.setFailed(err instanceof Error ? err.message : String(err));
 });

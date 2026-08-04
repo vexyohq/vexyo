@@ -20,6 +20,7 @@ program
   .option('-r, --reporter <name>', 'output reporter (console, json, markdown)', 'console')
   .option('--regression', 'also diff current behavior against the recorded golden set')
   .option('--fail-on <severity>', 'severity at/above which findings fail the run (error, warning)')
+  .option('-v, --verbose', "print the target server's captured stderr after the report")
   .action(
     async (opts: {
       config?: string;
@@ -27,6 +28,7 @@ program
       reporter: string;
       regression?: boolean;
       failOn?: string;
+      verbose?: boolean;
     }) => {
       const code = await runCommand({
         config: opts.config,
@@ -34,6 +36,7 @@ program
         reporter: opts.reporter,
         regression: opts.regression,
         failOn: opts.failOn,
+        verbose: opts.verbose,
       });
       process.exit(code);
     },
@@ -46,8 +49,9 @@ program
     '-c, --config <path>',
     'path to the vexyo config file (auto-discovered in cwd if omitted)',
   )
-  .action(async (opts: { config?: string }) => {
-    const code = await recordCommand({ config: opts.config });
+  .option('-v, --verbose', "print the target server's captured stderr after recording")
+  .action(async (opts: { config?: string; verbose?: boolean }) => {
+    const code = await recordCommand({ config: opts.config, verbose: opts.verbose });
     process.exit(code);
   });
 

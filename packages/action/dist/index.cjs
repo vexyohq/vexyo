@@ -23461,8 +23461,8 @@ var require_multipleOf = __commonJS({
         const { gen, data, schemaCode, it } = cxt;
         const prec = it.opts.multipleOfPrecision;
         const res = gen.let("res");
-        const invalid = prec ? (0, codegen_1._)`Math.abs(Math.round(${res}) - ${res}) > 1e-${prec}` : (0, codegen_1._)`${res} !== parseInt(${res})`;
-        cxt.fail$data((0, codegen_1._)`(${schemaCode} === 0 || (${res} = ${data}/${schemaCode}, ${invalid}))`);
+        const invalid2 = prec ? (0, codegen_1._)`Math.abs(Math.round(${res}) - ${res}) > 1e-${prec}` : (0, codegen_1._)`${res} !== parseInt(${res})`;
+        cxt.fail$data((0, codegen_1._)`(${schemaCode} === 0 || (${res} = ${data}/${schemaCode}, ${invalid2}))`);
       }
     };
     exports2.default = def;
@@ -25771,7 +25771,7 @@ var require_which = __commonJS({
         opt = {};
       const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt);
       const found = [];
-      const step = (i) => new Promise((resolve4, reject) => {
+      const step2 = (i) => new Promise((resolve4, reject) => {
         if (i === pathEnv.length)
           return opt.all && found.length ? resolve4(found) : reject(getNotFoundError(cmd));
         const ppRaw = pathEnv[i];
@@ -25782,7 +25782,7 @@ var require_which = __commonJS({
       });
       const subStep = (p, i, ii) => new Promise((resolve4, reject) => {
         if (ii === pathExt.length)
-          return resolve4(step(i + 1));
+          return resolve4(step2(i + 1));
         const ext = pathExt[ii];
         isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
           if (!er && is) {
@@ -25794,7 +25794,7 @@ var require_which = __commonJS({
           return resolve4(subStep(p, i, ii + 1));
         });
       });
-      return cb ? step(0).then((res) => cb(null, res), cb) : step(0);
+      return cb ? step2(0).then((res) => cb(null, res), cb) : step2(0);
     };
     var whichSync = (cmd, opt) => {
       opt = opt || {};
@@ -26182,6 +26182,9 @@ function escapeProperty(s) {
   return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A").replace(/:/g, "%3A").replace(/,/g, "%2C");
 }
 
+// ../../node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
+var os3 = __toESM(require("os"), 1);
+
 // ../../node_modules/.pnpm/@actions+http-client@4.0.1/node_modules/@actions/http-client/lib/index.js
 var tunnel = __toESM(require_tunnel2(), 1);
 var import_undici = __toESM(require_undici(), 1);
@@ -26249,22 +26252,22 @@ var __awaiter = function(thisArg, _arguments, P, generator) {
   return new (P || (P = Promise))(function(resolve4, reject) {
     function fulfilled(value) {
       try {
-        step(generator.next(value));
+        step2(generator.next(value));
       } catch (e) {
         reject(e);
       }
     }
     function rejected(value) {
       try {
-        step(generator["throw"](value));
+        step2(generator["throw"](value));
       } catch (e) {
         reject(e);
       }
     }
-    function step(result) {
+    function step2(result) {
       result.done ? resolve4(result.value) : adopt(result.value).then(fulfilled, rejected);
     }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
+    step2((generator = generator.apply(thisArg, _arguments || [])).next());
   });
 };
 var { access, appendFile, writeFile } = import_fs.promises;
@@ -26563,6 +26566,9 @@ function error(message, properties = {}) {
 }
 function warning(message, properties = {}) {
   issueCommand("warning", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+function info(message) {
+  process.stdout.write(message + os3.EOL);
 }
 
 // ../core/src/rule.ts
@@ -27346,8 +27352,8 @@ function cleanRegex(source) {
   const end = source.endsWith("$") ? source.length - 1 : source.length;
   return source.slice(start, end);
 }
-function floatSafeRemainder(val, step) {
-  const ratio = val / step;
+function floatSafeRemainder(val, step2) {
+  const ratio = val / step2;
   const roundedRatio = Math.round(ratio);
   const tolerance = Number.EPSILON * Math.max(Math.abs(ratio), 1);
   if (Math.abs(ratio - roundedRatio) < tolerance)
@@ -42773,15 +42779,15 @@ var toolsHaveNames = {
       throw new SkipRule("Server does not advertise the `tools` capability.");
     }
     const tools = await requireToolList(ctx);
-    const invalid = tools.filter((tool) => {
+    const invalid2 = tools.filter((tool) => {
       const name = stringField(tool, "name");
       return name === void 0 || name.length === 0;
     });
-    if (invalid.length > 0) {
+    if (invalid2.length > 0) {
       return [
         finding(
           this,
-          `${invalid.length} tool(s) have a missing or empty name.`,
+          `${invalid2.length} tool(s) have a missing or empty name.`,
           "Give every tool a non-empty string `name`.",
           { tools }
         )
@@ -42804,15 +42810,15 @@ var toolsHaveInputSchema = {
       throw new SkipRule("Server does not advertise the `tools` capability.");
     }
     const tools = await requireToolList(ctx);
-    const invalid = tools.filter((tool) => {
+    const invalid2 = tools.filter((tool) => {
       const schema = tool["inputSchema"];
       return !isRecord(schema) || schema["type"] !== "object";
     });
-    if (invalid.length > 0) {
+    if (invalid2.length > 0) {
       return [
         finding(
           this,
-          `${invalid.length} tool(s) are missing an object inputSchema (type: "object").`,
+          `${invalid2.length} tool(s) are missing an object inputSchema (type: "object").`,
           'Declare an `inputSchema` of `{ "type": "object", ... }` for every tool.',
           { tools }
         )
@@ -42892,15 +42898,15 @@ var resourcesHaveUri = {
       throw new SkipRule("Server does not advertise the `resources` capability.");
     }
     const resources = await requireResourceList(ctx);
-    const invalid = resources.filter((resource) => {
+    const invalid2 = resources.filter((resource) => {
       const uri = stringField(resource, "uri");
       return uri === void 0 || uri.length === 0;
     });
-    if (invalid.length > 0) {
+    if (invalid2.length > 0) {
       return [
         finding(
           this,
-          `${invalid.length} resource(s) have a missing or empty uri.`,
+          `${invalid2.length} resource(s) have a missing or empty uri.`,
           "Give every resource a non-empty `uri`.",
           { resources }
         )
@@ -42951,15 +42957,15 @@ var promptsHaveNames = {
       throw new SkipRule("Server does not advertise the `prompts` capability.");
     }
     const prompts = await requirePromptList(ctx);
-    const invalid = prompts.filter((prompt) => {
+    const invalid2 = prompts.filter((prompt) => {
       const name = stringField(prompt, "name");
       return name === void 0 || name.length === 0;
     });
-    if (invalid.length > 0) {
+    if (invalid2.length > 0) {
       return [
         finding(
           this,
-          `${invalid.length} prompt(s) have a missing or empty name.`,
+          `${invalid2.length} prompt(s) have a missing or empty name.`,
           "Give every prompt a non-empty string `name`.",
           { prompts }
         )
@@ -42990,16 +42996,16 @@ var unknownMethod = {
         )
       ];
     } catch (err) {
-      const info = classifyError(err);
-      if (info.code === ErrorCode.MethodNotFound) {
+      const info2 = classifyError(err);
+      if (info2.code === ErrorCode.MethodNotFound) {
         return [];
       }
       return [
         finding(
           this,
-          `Unknown method returned error code ${info.code ?? "(none)"}, expected -32601 (Method not found).`,
+          `Unknown method returned error code ${info2.code ?? "(none)"}, expected -32601 (Method not found).`,
           "Return JSON-RPC error -32601 for methods the server does not implement.",
-          info
+          info2
         )
       ];
     }
@@ -43112,7 +43118,7 @@ var unknownResource = {
 };
 
 // ../core/src/rules/2025-11-25/errors/error-object-shape.ts
-var NONEXISTENT_URI2 = "vexyo://__vexyo_error_shape_probe__";
+var UNKNOWN_METHOD = "vexyo/__vexyo_error_shape_probe__";
 var errorObjectShape = {
   id: "errors/error-object-shape",
   specVersion: "2025-11-25",
@@ -43121,25 +43127,19 @@ var errorObjectShape = {
   title: "JSON-RPC error objects carry a numeric code and non-empty message",
   specRef: "Base Protocol \xA7JSON-RPC / Error object",
   async run(ctx) {
-    if (!ctx.capabilities?.resources) {
-      throw new SkipRule("Server does not advertise the `resources` capability.");
-    }
     try {
-      await ctx.client.request(
-        { method: "resources/read", params: { uri: NONEXISTENT_URI2 } },
-        anyResult
-      );
-      throw new SkipRule("Server did not raise a JSON-RPC error for an unknown resource.");
+      await ctx.client.request({ method: UNKNOWN_METHOD }, anyResult);
+      throw new SkipRule("Server did not raise a JSON-RPC error for an unknown method.");
     } catch (err) {
       if (err instanceof SkipRule) {
         throw err;
       }
-      const info = classifyError(err);
+      const info2 = classifyError(err);
       const problems = [];
-      if (typeof info.code !== "number") {
+      if (typeof info2.code !== "number") {
         problems.push("missing numeric `code`");
       }
-      if (info.message === void 0 || info.message.length === 0) {
+      if (info2.message === void 0 || info2.message.length === 0) {
         problems.push("missing or empty `message`");
       }
       if (problems.length > 0) {
@@ -43148,7 +43148,7 @@ var errorObjectShape = {
             this,
             `JSON-RPC error object is malformed: ${problems.join(", ")}.`,
             "Every JSON-RPC error must include a numeric `code` and a non-empty `message`.",
-            info
+            info2
           )
         ];
       }
@@ -43459,25 +43459,25 @@ var Protocol = class {
     });
   }
   _resetTimeout(messageId) {
-    const info = this._timeoutInfo.get(messageId);
-    if (!info)
+    const info2 = this._timeoutInfo.get(messageId);
+    if (!info2)
       return false;
-    const totalElapsed = Date.now() - info.startTime;
-    if (info.maxTotalTimeout && totalElapsed >= info.maxTotalTimeout) {
+    const totalElapsed = Date.now() - info2.startTime;
+    if (info2.maxTotalTimeout && totalElapsed >= info2.maxTotalTimeout) {
       this._timeoutInfo.delete(messageId);
       throw McpError.fromError(ErrorCode.RequestTimeout, "Maximum total timeout exceeded", {
-        maxTotalTimeout: info.maxTotalTimeout,
+        maxTotalTimeout: info2.maxTotalTimeout,
         totalElapsed
       });
     }
-    clearTimeout(info.timeoutId);
-    info.timeoutId = setTimeout(info.onTimeout, info.timeout);
+    clearTimeout(info2.timeoutId);
+    info2.timeoutId = setTimeout(info2.onTimeout, info2.timeout);
     return true;
   }
   _cleanupTimeout(messageId) {
-    const info = this._timeoutInfo.get(messageId);
-    if (info) {
-      clearTimeout(info.timeoutId);
+    const info2 = this._timeoutInfo.get(messageId);
+    if (info2) {
+      clearTimeout(info2.timeoutId);
       this._timeoutInfo.delete(messageId);
     }
   }
@@ -43522,8 +43522,8 @@ var Protocol = class {
     this._progressHandlers.clear();
     this._taskProgressTokens.clear();
     this._pendingDebouncedNotifications.clear();
-    for (const info of this._timeoutInfo.values()) {
-      clearTimeout(info.timeoutId);
+    for (const info2 of this._timeoutInfo.values()) {
+      clearTimeout(info2.timeoutId);
     }
     this._timeoutInfo.clear();
     for (const controller of this._requestHandlerAbortControllers.values()) {
@@ -46516,6 +46516,24 @@ var BRAND = {
   bin: "vexyo"
 };
 
+// ../core/src/transports/errors.ts
+var TargetConnectionError = class extends Error {
+  transport;
+  /** Human-readable target (e.g. `stdio: node server.js`, `http: <url>`). */
+  targetDescription;
+  /** Captured child stderr tail; always '' for http targets. */
+  stderr;
+  truncated;
+  constructor(options) {
+    super(options.message, options.cause !== void 0 ? { cause: options.cause } : void 0);
+    this.name = "TargetConnectionError";
+    this.transport = options.transport;
+    this.targetDescription = options.targetDescription;
+    this.stderr = options.stderr;
+    this.truncated = options.truncated;
+  }
+};
+
 // ../core/src/transports/http.ts
 async function connectHttp(target) {
   let url2;
@@ -46535,10 +46553,14 @@ async function connectHttp(target) {
     await client.connect(transport);
   } catch (err) {
     await transport.close().catch(() => void 0);
-    throw new Error(
-      `Failed to connect to an MCP server over Streamable HTTP (url: ${target.url}). Check that the server is running and the URL points at its MCP endpoint.`,
-      { cause: err }
-    );
+    throw new TargetConnectionError({
+      message: `The target MCP server is unreachable (url: ${target.url}). Check that the server is running and the URL points at its MCP endpoint.`,
+      transport: "http",
+      targetDescription: `http: ${target.url}`,
+      stderr: "",
+      truncated: false,
+      cause: err
+    });
   }
   return {
     client,
@@ -46747,6 +46769,39 @@ var StdioClientTransport = class {
   }
 };
 
+// ../core/src/transports/stderr.ts
+var STDERR_CAP_BYTES = 64 * 1024;
+function createStderrTail(capBytes = STDERR_CAP_BYTES) {
+  const chunks = [];
+  let total = 0;
+  let truncated = false;
+  return {
+    append(chunk) {
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, "utf8");
+      chunks.push(buf);
+      total += buf.length;
+      while (total > capBytes) {
+        const first = chunks[0];
+        if (!first) {
+          break;
+        }
+        const overshoot = total - capBytes;
+        if (first.length <= overshoot) {
+          chunks.shift();
+          total -= first.length;
+        } else {
+          chunks[0] = first.subarray(overshoot);
+          total -= overshoot;
+        }
+        truncated = true;
+      }
+    },
+    snapshot() {
+      return { text: Buffer.concat(chunks).toString("utf8"), truncated };
+    }
+  };
+}
+
 // ../core/src/transports/stdio.ts
 async function connectStdio(target) {
   const transport = new StdioClientTransport({
@@ -46755,24 +46810,33 @@ async function connectStdio(target) {
     cwd: target.cwd,
     // When env is omitted the SDK supplies a safe default (PATH/HOME/etc.).
     env: target.env,
-    stderr: "inherit"
+    stderr: "pipe"
   });
+  const tail = createStderrTail();
+  transport.stderr?.on("data", (chunk) => tail.append(chunk));
   const client = new Client(
     { name: `${BRAND.name}-probe`, version: "0.0.0" },
     { capabilities: {} }
   );
+  const description = `stdio: ${target.command} ${(target.args ?? []).join(" ")}`.trim();
   try {
     await client.connect(transport);
   } catch (err) {
     await transport.close().catch(() => void 0);
-    throw new Error(
-      `Failed to connect to an MCP server over stdio (command: ${target.command}). Check that the command starts a stdio MCP server and exits cleanly on stdin close.`,
-      { cause: err }
-    );
+    const captured = tail.snapshot();
+    throw new TargetConnectionError({
+      message: `The target MCP server failed to start (${description}). Check that the command starts a stdio MCP server; its stderr is below.`,
+      transport: "stdio",
+      targetDescription: description,
+      stderr: captured.text,
+      truncated: captured.truncated,
+      cause: err
+    });
   }
   return {
     client,
     transport: { kind: "stdio" },
+    serverStderr: () => tail.snapshot(),
     close: async () => {
       await client.close();
     }
@@ -46816,14 +46880,17 @@ async function runSuite(opts) {
     await conn.close().catch(() => void 0);
   }
   const finishedAt = (/* @__PURE__ */ new Date()).toISOString();
+  const stderr = conn.serverStderr?.();
   return {
+    outcome: "completed",
     specVersion: opts.specVersion,
     target,
     startedAt,
     finishedAt,
     results,
     summary: summarizeResults(results),
-    exitCode: computeExitCode(results, failOn)
+    exitCode: computeExitCode(results, failOn),
+    ...stderr && stderr.text !== "" ? { serverStderr: stderr } : {}
   };
 }
 async function runRules(ctx, rules) {
@@ -47037,17 +47104,250 @@ function inRange(value, range) {
   return typeof value === "number" && Number.isInteger(value) && value >= range.min && value < range.max;
 }
 
+// ../core/src/golden/path.ts
+function invalid(path, detail) {
+  return new Error(
+    `Invalid result path "${path}": ${detail}. Expected dot/bracket syntax like "content[0].text" or "items[*].id".`
+  );
+}
+function parsePath(path) {
+  if (path === "" || path === "(root)") {
+    throw new Error(
+      `Path "${path}" refers to the whole result \u2014 use a whole-result normalizer instead of a path rule.`
+    );
+  }
+  const segments = [];
+  let i = 0;
+  while (i < path.length) {
+    const ch = path[i];
+    if (ch === ".") {
+      throw invalid(
+        path,
+        i === 0 ? 'a path cannot start with "."' : "empty key (consecutive dots)"
+      );
+    }
+    if (ch === "[") {
+      const end = path.indexOf("]", i);
+      if (end === -1) {
+        throw invalid(path, `unclosed "[" at position ${i}`);
+      }
+      const inner = path.slice(i + 1, end);
+      if (inner === "*") {
+        segments.push({ kind: "wildcard" });
+      } else if (/^\d+$/.test(inner)) {
+        segments.push({ kind: "index", index: Number(inner) });
+      } else {
+        throw invalid(path, `expected an array index or "*" inside "[...]", got "${inner}"`);
+      }
+      i = end + 1;
+    } else {
+      let j = i;
+      while (j < path.length && path[j] !== "." && path[j] !== "[") {
+        j += 1;
+      }
+      segments.push({ kind: "key", key: path.slice(i, j) });
+      i = j;
+    }
+    if (i < path.length) {
+      if (path[i] === ".") {
+        i += 1;
+        if (i === path.length) {
+          throw invalid(path, 'trailing "."');
+        }
+        if (path[i] === "[" || path[i] === ".") {
+          throw invalid(path, `unexpected "${path[i]}" after "." at position ${i}`);
+        }
+      } else if (path[i] !== "[") {
+        throw invalid(path, `expected "." or "[" after "]" at position ${i}`);
+      }
+    }
+  }
+  return segments;
+}
+function isPlainObject3(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function applyAtPath(tree, segments, fn) {
+  return step(tree, segments, 0, fn);
+}
+function step(tree, segments, depth, fn) {
+  if (depth === segments.length) {
+    return fn(tree);
+  }
+  const segment = segments[depth];
+  if (segment.kind === "key") {
+    if (!isPlainObject3(tree) || !Object.hasOwn(tree, segment.key)) {
+      return tree;
+    }
+    const next = step(tree[segment.key], segments, depth + 1, fn);
+    if (next === tree[segment.key]) {
+      return tree;
+    }
+    return { ...tree, [segment.key]: next };
+  }
+  if (segment.kind === "index") {
+    if (!Array.isArray(tree) || segment.index >= tree.length) {
+      return tree;
+    }
+    const next = step(tree[segment.index], segments, depth + 1, fn);
+    if (next === tree[segment.index]) {
+      return tree;
+    }
+    const copy = [...tree];
+    copy[segment.index] = next;
+    return copy;
+  }
+  if (!Array.isArray(tree)) {
+    return tree;
+  }
+  const mapped = tree.map((item) => step(item, segments, depth + 1, fn));
+  return mapped.every((item, index) => item === tree[index]) ? tree : mapped;
+}
+
+// ../core/src/golden/sort.ts
+function rank(value) {
+  if (Array.isArray(value)) {
+    return 4;
+  }
+  switch (typeof value) {
+    case "boolean":
+      return 1;
+    case "number":
+      return 2;
+    case "string":
+      return 3;
+    case "object":
+      return value === null ? 0 : 5;
+    default:
+      return 0;
+  }
+}
+function project(value) {
+  if (typeof value === "number" && !Number.isFinite(value)) {
+    return null;
+  }
+  const r = rank(value);
+  return r === 0 ? null : value;
+}
+function compareStrings(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+function serializableKeys(record2) {
+  return Object.keys(record2).filter((key) => {
+    const child = record2[key];
+    return child !== void 0 && typeof child !== "function";
+  }).sort();
+}
+function compareJsonValues(a, b) {
+  const pa = project(a);
+  const pb = project(b);
+  const ra = rank(pa);
+  const rb = rank(pb);
+  if (ra !== rb) {
+    return ra - rb;
+  }
+  switch (ra) {
+    case 0:
+      return 0;
+    // both null
+    case 1:
+      return Number(pa) - Number(pb);
+    // false < true
+    case 2: {
+      const na = pa;
+      const nb = pb;
+      return na < nb ? -1 : na > nb ? 1 : 0;
+    }
+    case 3:
+      return compareStrings(pa, pb);
+    case 4: {
+      const aa = pa;
+      const ab = pb;
+      const len = Math.min(aa.length, ab.length);
+      for (let i = 0; i < len; i += 1) {
+        const cmp = compareJsonValues(aa[i], ab[i]);
+        if (cmp !== 0) {
+          return cmp;
+        }
+      }
+      return aa.length - ab.length;
+    }
+    default: {
+      const oa = pa;
+      const ob = pb;
+      const ka = serializableKeys(oa);
+      const kb = serializableKeys(ob);
+      const len = Math.min(ka.length, kb.length);
+      for (let i = 0; i < len; i += 1) {
+        const keyCmp = compareStrings(ka[i], kb[i]);
+        if (keyCmp !== 0) {
+          return keyCmp;
+        }
+      }
+      if (ka.length !== kb.length) {
+        return ka.length - kb.length;
+      }
+      for (const key of ka) {
+        const cmp = compareJsonValues(oa[key], ob[key]);
+        if (cmp !== 0) {
+          return cmp;
+        }
+      }
+      return 0;
+    }
+  }
+}
+
+// ../core/src/golden/pipeline.ts
+var IGNORED_PLACEHOLDER = "<ignored>";
+function effectivePipelineSpec(cfg, tool) {
+  const spec = cfg.tools[tool];
+  return {
+    normalizers: spec?.normalizers ?? cfg.defaultNormalizers,
+    paths: spec?.paths ?? cfg.defaultPaths,
+    sortArrays: spec?.sortArrays ?? cfg.defaultSortArrays,
+    ignore: spec?.ignore ?? cfg.defaultIgnore
+  };
+}
+function toRefList(refs) {
+  return Array.isArray(refs) ? refs : [refs];
+}
+function sortIfArray(value) {
+  return Array.isArray(value) ? [...value].sort(compareJsonValues) : value;
+}
+function buildPipeline(spec) {
+  const scoped = Object.entries(spec.paths).map(([path, refs]) => ({
+    segments: parsePath(path),
+    refs: toRefList(refs)
+  }));
+  const sortRules = spec.sortArrays.map((path) => parsePath(path)).sort((a, b) => b.length - a.length);
+  const ignored = spec.ignore.map((path) => parsePath(path));
+  return (value) => {
+    let out = applyNormalizers(value, spec.normalizers);
+    for (const rule of scoped) {
+      out = applyAtPath(out, rule.segments, (subtree) => applyNormalizers(subtree, rule.refs));
+    }
+    for (const segments of sortRules) {
+      out = applyAtPath(out, segments, sortIfArray);
+    }
+    for (const segments of ignored) {
+      out = applyAtPath(out, segments, () => IGNORED_PLACEHOLDER);
+    }
+    return out;
+  };
+}
+
 // ../core/src/golden/serialize.ts
 var PRINT_WIDTH = 100;
 var INDENT = "  ";
-function isPlainObject3(value) {
+function isPlainObject4(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 function canonicalize(value) {
   if (Array.isArray(value)) {
     return value.map((item) => canonicalize(item === void 0 ? null : item));
   }
-  if (isPlainObject3(value)) {
+  if (isPlainObject4(value)) {
     const out = {};
     for (const key of Object.keys(value).sort()) {
       const child = value[key];
@@ -47063,7 +47363,7 @@ function flat(value) {
   if (Array.isArray(value)) {
     return value.length === 0 ? "[]" : `[${value.map(flat).join(", ")}]`;
   }
-  if (isPlainObject3(value)) {
+  if (isPlainObject4(value)) {
     const keys = Object.keys(value);
     if (keys.length === 0) {
       return "{}";
@@ -47073,7 +47373,7 @@ function flat(value) {
   return JSON.stringify(value);
 }
 function print(value, level, column, trailer) {
-  if (!Array.isArray(value) && !isPlainObject3(value)) {
+  if (!Array.isArray(value) && !isPlainObject4(value)) {
     return JSON.stringify(value);
   }
   const flatForm = flat(value);
@@ -47111,7 +47411,7 @@ ${closeIndent}}`;
 }
 function forcesBreak(value) {
   return value.length > 1 && value.every(
-    (el) => Array.isArray(el) && el.length > 1 || isPlainObject3(el) && Object.keys(el).length > 1
+    (el) => Array.isArray(el) && el.length > 1 || isPlainObject4(el) && Object.keys(el).length > 1
   );
 }
 function fillNumbers(value, level) {
@@ -47182,9 +47482,9 @@ async function runRegression(client, golden, cfg) {
     if (!liveToolNames.has(recording.tool)) {
       continue;
     }
-    const refs = cfg.tools[recording.tool]?.normalizers ?? cfg.defaultNormalizers;
+    const pipeline = buildPipeline(effectivePipelineSpec(cfg, recording.tool));
     for (const testCase of recording.cases) {
-      results.push(await behavioralDrift(client, specVersion, recording.tool, testCase, refs));
+      results.push(await behavioralDrift(client, specVersion, recording.tool, testCase, pipeline));
     }
   }
   return results;
@@ -47246,18 +47546,19 @@ function manifestDrift(specVersion, type, keyField, goldenDefs, liveDefs) {
   }
   return results;
 }
-async function behavioralDrift(client, specVersion, tool, testCase, refs) {
+async function behavioralDrift(client, specVersion, tool, testCase, pipeline) {
   let liveNormalized;
   try {
     const raw = await client.request(
       { method: "tools/call", params: { name: tool, arguments: testCase.arguments } },
       anyResult
     );
-    liveNormalized = applyNormalizers(raw, refs);
+    liveNormalized = pipeline(raw);
   } catch (err) {
-    liveNormalized = { error: err instanceof Error ? err.message : String(err) };
+    liveNormalized = pipeline({ error: err instanceof Error ? err.message : String(err) });
   }
-  const fieldDiffs = diffValue(testCase.result, liveNormalized);
+  const goldenNormalized = pipeline(testCase.result);
+  const fieldDiffs = diffValue(goldenNormalized, liveNormalized);
   if (fieldDiffs.length === 0) {
     return passResult(specVersion, tool, testCase.case);
   }
@@ -47268,7 +47569,7 @@ async function behavioralDrift(client, specVersion, tool, testCase, refs) {
       kind: "behavioral",
       target: { type: "tool", name: tool, case: testCase.case },
       change: "changed",
-      before: testCase.result,
+      before: goldenNormalized,
       after: liveNormalized,
       fieldDiffs,
       suggestedNormalizers: suggested.length > 0 ? suggested : void 0
@@ -47643,9 +47944,37 @@ var recordCaseSchema = external_exports.object({
   case: external_exports.string().min(1),
   arguments: external_exports.record(external_exports.string(), external_exports.unknown()).default({})
 });
+function pathSyntaxError(path) {
+  try {
+    parsePath(path);
+    return null;
+  } catch (err) {
+    return err instanceof Error ? err.message : String(err);
+  }
+}
+var pathNormalizersSchema = external_exports.record(external_exports.string(), external_exports.union([normalizerRefSchema, external_exports.array(normalizerRefSchema)])).superRefine((record2, ctx) => {
+  for (const key of Object.keys(record2)) {
+    const message = pathSyntaxError(key);
+    if (message !== null) {
+      ctx.addIssue({ code: "custom", path: [key], message });
+    }
+  }
+});
+var resultPathSchema = external_exports.string().superRefine((value, ctx) => {
+  const message = pathSyntaxError(value);
+  if (message !== null) {
+    ctx.addIssue({ code: "custom", message });
+  }
+});
 var recordToolSchema = external_exports.object({
   cases: external_exports.array(recordCaseSchema).min(1),
-  normalizers: external_exports.array(normalizerRefSchema).optional()
+  normalizers: external_exports.array(normalizerRefSchema).optional(),
+  /** Path-scoped normalizers for this tool; overrides the defaults. */
+  paths: pathNormalizersSchema.optional(),
+  /** Paths whose array order is not significant; overrides the defaults. */
+  sortArrays: external_exports.array(resultPathSchema).optional(),
+  /** Paths excluded from comparison for this tool; overrides the defaults. */
+  ignore: external_exports.array(resultPathSchema).optional()
 });
 var regressionSchema = external_exports.object({
   /** Committed golden directory (relative to the config file's cwd). */
@@ -47654,6 +47983,12 @@ var regressionSchema = external_exports.object({
   failOn: external_exports.enum(["error", "warning"]).default("error"),
   /** Default normalizers applied to every recorded tool. */
   normalizers: external_exports.array(normalizerRefSchema).default([]),
+  /** Default path-scoped normalizers applied to every recorded tool. */
+  paths: pathNormalizersSchema.default({}),
+  /** Default paths whose array order is not significant (sorted before diffing). */
+  sortArrays: external_exports.array(resultPathSchema).default([]),
+  /** Default ignored paths applied to every recorded tool. */
+  ignore: external_exports.array(resultPathSchema).default([]),
   /** Tools to record/compare, keyed by name. Empty = record nothing (opt-in). */
   record: external_exports.record(external_exports.string(), recordToolSchema).default({})
 });
@@ -47722,6 +48057,19 @@ ${formatZodError(parsed.error)}`);
   return parsed.data;
 }
 
+// ../cli/src/errors.ts
+function formatStderrBlock(stderr, truncated) {
+  if (stderr === "") {
+    return "(no stderr captured from the target server)\n";
+  }
+  const label = truncated ? "captured, truncated to the last 64KB" : "captured";
+  const body = stderr.endsWith("\n") ? stderr : `${stderr}
+`;
+  return `--- target stderr (${label}) ---
+${body}--- end target stderr ---
+`;
+}
+
 // ../cli/src/regression.ts
 var import_node_path3 = require("node:path");
 function resolveGoldenDir(configPath, regression) {
@@ -47731,10 +48079,19 @@ function toGoldenConfig(specVersion, regression) {
   return {
     specVersion,
     defaultNormalizers: regression.normalizers,
+    defaultPaths: regression.paths,
+    defaultSortArrays: regression.sortArrays,
+    defaultIgnore: regression.ignore,
     tools: Object.fromEntries(
       Object.entries(regression.record).map(([name, spec]) => [
         name,
-        { cases: spec.cases, normalizers: spec.normalizers }
+        {
+          cases: spec.cases,
+          normalizers: spec.normalizers,
+          paths: spec.paths,
+          sortArrays: spec.sortArrays,
+          ignore: spec.ignore
+        }
       ])
     )
   };
@@ -47853,6 +48210,11 @@ async function run() {
   }
 }
 run().catch((err) => {
+  if (err instanceof TargetConnectionError) {
+    info(formatStderrBlock(err.stderr, err.truncated));
+    setFailed(err.message);
+    return;
+  }
   setFailed(err instanceof Error ? err.message : String(err));
 });
 // Annotate the CommonJS export names for ESM import in node:
