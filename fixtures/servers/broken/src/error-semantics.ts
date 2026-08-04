@@ -27,6 +27,9 @@ const echoTool = {
   inputSchema: { type: 'object', properties: { text: { type: 'string' } }, required: ['text'] },
 };
 
+// Must match UNKNOWN_METHOD in packages/core/src/rules/2025-11-25/errors/error-object-shape.ts
+const ERROR_SHAPE_PROBE = 'vexyo/__vexyo_error_shape_probe__';
+
 export function createServer(defect: string): Server {
   const server = new Server(
     { name: 'vexyo-broken-errors', version: '1.0.0' },
@@ -63,6 +66,18 @@ export function createServer(defect: string): Server {
     }
     throw new McpError(ErrorCode.InvalidParams, `Unknown resource: ${req.params.uri}`);
   });
+
+  // error-object-shape provokes its error with an unknown method, so this
+  // defect must mangle that error too, not just tool/resource errors.
+  if (defect === 'empty-error-message') {
+    const shapeProbeSchema = z.object({
+      method: z.literal(ERROR_SHAPE_PROBE),
+      params: z.unknown().optional(),
+    });
+    server.setRequestHandler(shapeProbeSchema, () => {
+      throw new BareError(ErrorCode.MethodNotFound);
+    });
+  }
 
   // Only under this defect does the server (wrongly) answer an unsupported method.
   if (defect === 'unknown-method-ok') {
