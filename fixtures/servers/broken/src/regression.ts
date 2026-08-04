@@ -9,11 +9,15 @@
  *   --defect tool-removed          → coverage drift (removed): `add` disappears
  *   --defect tool-added            → coverage drift (added): extra `search` tool
  *   --defect report-output-changed → behavioral drift on `report`'s STABLE field
+ *   --defect inventory-item-changed → behavioral drift on one `inventory` element
  *
  * `stamp` returns a fresh timestamp + uuid on every call, exercising the
  * normalizers: its golden is stable only because they collapse both values.
  * `report` mixes volatile fields at specific paths (`structuredContent.items[*].id`,
  * `meta.elapsedMs`) with stable ones, exercising path-scoped normalizers/ignores.
+ * `inventory` returns stable items in a RANDOM order every call, exercising the
+ * sortArrays stage; element keys are chosen so `sku` (alphabetically first)
+ * drives the sort and the defect's `stock` change keeps its sorted position.
  */
 import { randomUUID } from 'node:crypto';
 import { serve } from '@vexyo/fixture-support';
@@ -43,6 +47,22 @@ const reportDef = {
   title: 'Report',
   inputSchema: { type: 'object', properties: {} },
 };
+const inventoryDef = {
+  name: 'inventory',
+  title: 'Inventory',
+  inputSchema: { type: 'object', properties: {} },
+};
+
+/** A fresh random permutation on every call (never a call counter — a counter
+ * would repeat the same order in separate record/run processes). */
+function shuffled<T>(items: readonly T[]): T[] {
+  const pool = [...items];
+  const out: T[] = [];
+  while (pool.length > 0) {
+    out.push(...pool.splice(Math.floor(Math.random() * pool.length), 1));
+  }
+  return out;
+}
 const searchDef = {
   name: 'search',
   title: 'Search',
@@ -66,7 +86,7 @@ export function createServer(defect: string): Server {
   };
 
   server.setRequestHandler(ListToolsRequestSchema, () => {
-    const tools = [echoDef, stampDef, reportDef];
+    const tools = [echoDef, stampDef, reportDef, inventoryDef];
     if (defect !== 'tool-removed') {
       tools.push(addDef);
     }
@@ -121,6 +141,18 @@ export function createServer(defect: string): Server {
           summary,
         },
         meta: { elapsedMs: performance.now() },
+      });
+    }
+    if (name === 'inventory') {
+      return raw({
+        content: [{ type: 'text', text: 'inventory' }],
+        structuredContent: {
+          items: shuffled([
+            { sku: 'apple', stock: 12 },
+            { sku: 'banana', stock: 7 },
+            { sku: 'cherry', stock: defect === 'inventory-item-changed' ? 42 : 3 },
+          ]),
+        },
       });
     }
     throw new McpError(ErrorCode.InvalidParams, `Unknown tool: ${name}`);

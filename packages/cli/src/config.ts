@@ -72,8 +72,8 @@ const pathNormalizersSchema = z
     }
   });
 
-/** A single ignored result path (`meta.elapsedMs`). */
-const ignorePathSchema = z.string().superRefine((value, ctx) => {
+/** A single validated result path (`meta.elapsedMs`, `items[*].id`). */
+const resultPathSchema = z.string().superRefine((value, ctx) => {
   const message = pathSyntaxError(value);
   if (message !== null) {
     ctx.addIssue({ code: 'custom', message });
@@ -85,8 +85,10 @@ const recordToolSchema = z.object({
   normalizers: z.array(normalizerRefSchema).optional(),
   /** Path-scoped normalizers for this tool; overrides the defaults. */
   paths: pathNormalizersSchema.optional(),
+  /** Paths whose array order is not significant; overrides the defaults. */
+  sortArrays: z.array(resultPathSchema).optional(),
   /** Paths excluded from comparison for this tool; overrides the defaults. */
-  ignore: z.array(ignorePathSchema).optional(),
+  ignore: z.array(resultPathSchema).optional(),
 });
 
 const regressionSchema = z.object({
@@ -98,8 +100,10 @@ const regressionSchema = z.object({
   normalizers: z.array(normalizerRefSchema).default([]),
   /** Default path-scoped normalizers applied to every recorded tool. */
   paths: pathNormalizersSchema.default({}),
+  /** Default paths whose array order is not significant (sorted before diffing). */
+  sortArrays: z.array(resultPathSchema).default([]),
   /** Default ignored paths applied to every recorded tool. */
-  ignore: z.array(ignorePathSchema).default([]),
+  ignore: z.array(resultPathSchema).default([]),
   /** Tools to record/compare, keyed by name. Empty = record nothing (opt-in). */
   record: z.record(z.string(), recordToolSchema).default({}),
 });
