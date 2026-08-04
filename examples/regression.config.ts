@@ -23,8 +23,10 @@ export default defineConfig({
     normalizers: ['iso-timestamp', 'uuid'],
     // Path-scoped rules (kept commented here so the committed goldens stay put):
     // scope a normalizer to one JSON path — the syntax matches drift-report
-    // paths — or exclude a path from comparison entirely.
+    // paths — declare an array's order insignificant, or exclude a path from
+    // comparison entirely.
     // paths: { 'structuredContent.items[*].id': 'uuid' },
+    // sortArrays: ['structuredContent.items'],
     // ignore: ['meta.elapsedMs'],
     record: {
       echo: { cases: [{ case: 'basic', arguments: { text: 'hello' } }] },

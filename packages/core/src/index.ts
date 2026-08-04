@@ -42,6 +42,7 @@ export {
 export type { NormalizerFn, NormalizerObject, NormalizerRef } from './golden/normalize';
 export { applyAtPath, parsePath } from './golden/path';
 export type { PathSegment } from './golden/path';
+export { compareJsonValues } from './golden/sort';
 export {
   IGNORED_PLACEHOLDER,
   buildPipeline,

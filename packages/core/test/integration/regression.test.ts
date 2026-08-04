@@ -25,6 +25,7 @@ const cfg: GoldenConfig = {
   specVersion: '2025-11-25',
   defaultNormalizers: ['iso-timestamp', 'uuid'],
   defaultPaths: {},
+  defaultSortArrays: [],
   defaultIgnore: [],
   tools: {
     echo: { cases: [{ case: 'basic', arguments: { text: 'hello' } }] },
@@ -38,12 +39,28 @@ const reportCfg: GoldenConfig = {
   specVersion: '2025-11-25',
   defaultNormalizers: [],
   defaultPaths: {},
+  defaultSortArrays: [],
   defaultIgnore: [],
   tools: {
     report: {
       cases: [{ case: 'default', arguments: {} }],
       paths: { 'structuredContent.items[*].id': 'uuid' },
       ignore: ['meta.elapsedMs'],
+    },
+  },
+};
+
+/** `inventory` returns stable items in a random order — sortArrays absorbs it. */
+const inventoryCfg: GoldenConfig = {
+  specVersion: '2025-11-25',
+  defaultNormalizers: [],
+  defaultPaths: {},
+  defaultSortArrays: [],
+  defaultIgnore: [],
+  tools: {
+    inventory: {
+      cases: [{ case: 'default', arguments: {} }],
+      sortArrays: ['structuredContent.items'],
     },
   },
 };
@@ -176,6 +193,55 @@ describe('path-scoped normalizers and ignored paths', () => {
       const committed = await readFile(join(goldenDir, file), 'utf8');
       expect(fresh, file).toBe(committed);
     }
+  });
+});
+
+describe('sortArrays (unordered result arrays)', () => {
+  async function recordWith(config: GoldenConfig): Promise<GoldenSet> {
+    return withClient('none', (client) => recordGoldens(client, config));
+  }
+
+  it('no false drift across processes: random server order is absorbed by the sort', async () => {
+    const golden = await recordWith(inventoryCfg);
+    const results = await withClient('none', (client) =>
+      runRegression(client, golden, inventoryCfg),
+    );
+    expect(results.filter((r) => r.status !== 'pass')).toEqual([]);
+  });
+
+  it('records the golden in sorted order, whatever order the server emitted', async () => {
+    const golden = await recordWith(inventoryCfg);
+    const recording = golden.recordings.find((r) => r.tool === 'inventory');
+    const result = recording?.cases[0]?.result as {
+      structuredContent: { items: Array<{ sku: string }> };
+    };
+    expect(result.structuredContent.items.map((i) => i.sku)).toEqual(['apple', 'banana', 'cherry']);
+  });
+
+  it('a genuinely changed element still drifts, at its post-sort position', async () => {
+    const golden = await recordWith(inventoryCfg);
+    const { result, detail } = soleDrift(
+      await withClient('inventory-item-changed', (client) =>
+        runRegression(client, golden, inventoryCfg),
+      ),
+    );
+    expect(detail.kind).toBe('behavioral');
+    expect(result.status).toBe('fail');
+    const paths = detail.fieldDiffs?.map((d) => d.path) ?? [];
+    // cherry sorts last (index 2); only its stock changed.
+    expect(paths).toEqual(['structuredContent.items[2].stock']);
+  });
+
+  it('a sortArrays rule added AFTER recording applies without a re-record', async () => {
+    const unsortedCfg: GoldenConfig = {
+      ...inventoryCfg,
+      tools: { inventory: { cases: [{ case: 'default', arguments: {} }] } },
+    };
+    const golden = await recordWith(unsortedCfg);
+    const results = await withClient('none', (client) =>
+      runRegression(client, golden, inventoryCfg),
+    );
+    expect(results.filter((r) => r.status !== 'pass')).toEqual([]);
   });
 });
 

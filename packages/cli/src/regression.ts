@@ -13,6 +13,7 @@ export function toGoldenConfig(specVersion: string, regression: RegressionConfig
     specVersion,
     defaultNormalizers: regression.normalizers,
     defaultPaths: regression.paths,
+    defaultSortArrays: regression.sortArrays,
     defaultIgnore: regression.ignore,
     tools: Object.fromEntries(
       Object.entries(regression.record).map(([name, spec]) => [
@@ -21,6 +22,7 @@ export function toGoldenConfig(specVersion: string, regression: RegressionConfig
           cases: spec.cases,
           normalizers: spec.normalizers,
           paths: spec.paths,
+          sortArrays: spec.sortArrays,
           ignore: spec.ignore,
         },
       ]),

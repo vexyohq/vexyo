@@ -13,6 +13,8 @@ export interface GoldenToolSpec {
   normalizers?: NormalizerRef[];
   /** Path-scoped normalizers (`'items[*].id': 'uuid'`); overrides the defaults. */
   paths?: Record<string, NormalizerRef | NormalizerRef[]>;
+  /** Paths whose array order is not significant; overrides the defaults. */
+  sortArrays?: string[];
   /** Paths excluded from comparison entirely; overrides the defaults. */
   ignore?: string[];
 }
@@ -23,6 +25,8 @@ export interface GoldenConfig {
   defaultNormalizers: NormalizerRef[];
   /** Default path-scoped normalizers applied to every recorded tool. */
   defaultPaths: Record<string, NormalizerRef | NormalizerRef[]>;
+  /** Default sorted-array paths applied to every recorded tool. */
+  defaultSortArrays: string[];
   /** Default ignored paths applied to every recorded tool. */
   defaultIgnore: string[];
   /** Tools to record/compare, keyed by tool name. Empty = record nothing. */

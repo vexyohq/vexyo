@@ -105,6 +105,44 @@ describe('regression config', () => {
     expect(issue?.message).toMatch(/Invalid result path/);
   });
 
+  it('accepts sortArrays at both levels, defaulting to empty', () => {
+    const parsed = configSchema.parse({
+      target: { transport: 'stdio', command: 'node' },
+      regression: {
+        sortArrays: ['items'],
+        record: {
+          inventory: {
+            cases: [{ case: 'default' }],
+            sortArrays: ['structuredContent.items'],
+          },
+          plain: { cases: [{ case: 'default' }] },
+        },
+      },
+    });
+    expect(parsed.regression?.sortArrays).toEqual(['items']);
+    expect(parsed.regression?.record['inventory']?.sortArrays).toEqual(['structuredContent.items']);
+    // Per-tool must stay undefined when omitted (?? falls back to the defaults);
+    // a zod default of [] here would silently disable the regression-level list.
+    expect(parsed.regression?.record['plain']?.sortArrays).toBeUndefined();
+  });
+
+  it('defaults regression-level sortArrays to empty', () => {
+    const parsed = configSchema.parse({
+      target: { transport: 'stdio', command: 'node' },
+      regression: {},
+    });
+    expect(parsed.regression?.sortArrays).toEqual([]);
+  });
+
+  it('rejects a malformed sortArrays entry', () => {
+    const result = configSchema.safeParse({
+      target: { transport: 'stdio', command: 'node' },
+      regression: { sortArrays: ['items['] },
+    });
+    expect(result.success).toBe(false);
+    expect(result.success ? '' : result.error.issues[0]?.message).toMatch(/unclosed/);
+  });
+
   it('rejects a malformed ignore entry', () => {
     const result = configSchema.safeParse({
       target: { transport: 'stdio', command: 'node' },
@@ -123,10 +161,12 @@ describe('toGoldenConfig', () => {
         normalizers: ['iso-timestamp'],
         paths: { 'content[*].text': 'uuid' },
         ignore: ['meta.elapsedMs'],
+        sortArrays: ['top'],
         record: {
           report: {
             cases: [{ case: 'default' }],
             paths: { 'items[*].id': 'hex-id' },
+            sortArrays: ['items'],
             ignore: ['meta.debug'],
           },
         },
@@ -137,8 +177,10 @@ describe('toGoldenConfig', () => {
     }
     const golden = toGoldenConfig('2025-11-25', parsed.regression);
     expect(golden.defaultPaths).toEqual({ 'content[*].text': 'uuid' });
+    expect(golden.defaultSortArrays).toEqual(['top']);
     expect(golden.defaultIgnore).toEqual(['meta.elapsedMs']);
     expect(golden.tools['report']?.paths).toEqual({ 'items[*].id': 'hex-id' });
+    expect(golden.tools['report']?.sortArrays).toEqual(['items']);
     expect(golden.tools['report']?.ignore).toEqual(['meta.debug']);
   });
 
@@ -158,12 +200,14 @@ describe('toGoldenConfig', () => {
       specVersion: '2025-11-25',
       defaultNormalizers: ['uuid'],
       defaultPaths: {},
+      defaultSortArrays: [],
       defaultIgnore: [],
       tools: {
         echo: {
           cases: [{ case: 'basic', arguments: { text: 'hi' } }],
           normalizers: undefined,
           paths: undefined,
+          sortArrays: undefined,
           ignore: undefined,
         },
       },
