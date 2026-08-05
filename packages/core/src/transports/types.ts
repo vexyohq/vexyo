@@ -25,6 +25,8 @@ export type ConnectTarget =
 export interface ConnectedClient {
   client: Client;
   transport: TransportInfo;
+  /** The protocolVersion the server returned from initialize (never vexyo's configured spec). */
+  negotiatedProtocolVersion: string;
   /**
    * Snapshot of the captured child-stderr tail (stdio only; absent for http).
    * Callable at any point, including after `close()`.

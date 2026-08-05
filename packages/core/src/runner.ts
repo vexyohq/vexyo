@@ -2,7 +2,15 @@ import { cleanErrorMessage } from './mcp/errors';
 import { connectTarget, type ConnectTarget } from './transports/index';
 import { rulesForSpecVersion } from './registry';
 import { SkipRule, type Rule, type RuleContext } from './rule';
-import type { RuleResult, RunResult, RunSummary, RunTarget, Severity, SpecVersion } from './types';
+import type {
+  RuleResult,
+  RunResult,
+  RunSummary,
+  RunTarget,
+  ServerIdentity,
+  Severity,
+  SpecVersion,
+} from './types';
 
 export interface RunSuiteOptions {
   specVersion: SpecVersion;
@@ -41,6 +49,9 @@ export async function runSuite(opts: RunSuiteOptions): Promise<RunResult> {
   const target = describeTarget(opts.target);
 
   const conn = await connectTarget(opts.target);
+  // Captured before close(): the client getters are only guaranteed while the
+  // connection lives. All from the initialize exchange — no extra round trip.
+  const server = serverIdentity(conn);
   let results: RuleResult[];
   try {
     const ctx: RuleContext = {
@@ -63,6 +74,7 @@ export async function runSuite(opts: RunSuiteOptions): Promise<RunResult> {
   const stderr = conn.serverStderr?.();
   return {
     outcome: 'completed',
+    server,
     specVersion: opts.specVersion,
     target,
     startedAt,
@@ -71,6 +83,19 @@ export async function runSuite(opts: RunSuiteOptions): Promise<RunResult> {
     summary: summarizeResults(results),
     exitCode: computeExitCode(results, failOn),
     ...(stderr && stderr.text !== '' ? { serverStderr: stderr } : {}),
+  };
+}
+
+/** Assemble {@link ServerIdentity} from a live connection's initialize data. */
+function serverIdentity(conn: Awaited<ReturnType<typeof connectTarget>>): ServerIdentity {
+  const instructions = conn.client.getInstructions();
+  return {
+    negotiatedProtocolVersion: conn.negotiatedProtocolVersion,
+    // The getters are always set after a successful connect; the fallbacks are
+    // unreachable and exist only to satisfy the `| undefined` return types.
+    serverInfo: conn.client.getServerVersion() ?? { name: '', version: '' },
+    capabilities: conn.client.getServerCapabilities() ?? {},
+    ...(instructions !== undefined ? { instructions } : {}),
   };
 }
 

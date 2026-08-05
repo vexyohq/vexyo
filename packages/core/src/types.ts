@@ -78,6 +78,26 @@ export interface RunSummary {
   total: number;
 }
 
+/**
+ * What the server under test actually IS, from the initialize handshake — as
+ * opposed to what vexyo TARGETED (`RunResult.specVersion`). A finding is not
+ * interpretable without this: a rule failing under spec 2025-11-25 means
+ * something else entirely if the server negotiated an older protocol version.
+ * Deliberately typed with neutral shapes, not SDK types: RunResult is vexyo's
+ * semver-stable reporter contract, and an SDK upgrade must never be able to
+ * silently change it. Values are passed through exactly as advertised.
+ */
+export interface ServerIdentity {
+  /** The protocolVersion the server returned from initialize. */
+  negotiatedProtocolVersion: string;
+  /** `serverInfo` as advertised (extra advertised fields survive at runtime). */
+  serverInfo: { name: string; version: string };
+  /** The capabilities object as advertised. */
+  capabilities: Record<string, unknown>;
+  /** Only present when the server sent one. */
+  instructions?: string;
+}
+
 export interface RunResult {
   /**
    * Discriminator against the CLI's launch-failure JSON document (`outcome:
@@ -86,6 +106,8 @@ export interface RunResult {
    * `undefined`, which is the ambiguity it exists to remove.
    */
   outcome: 'completed';
+  /** Required: a completed run always has an initialize response by definition. */
+  server: ServerIdentity;
   specVersion: SpecVersion;
   target: RunTarget;
   /** ISO-8601 timestamps. */

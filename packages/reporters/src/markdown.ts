@@ -27,8 +27,13 @@ export const markdownReporter: Reporter = {
     const drift = classifyRegression(regression);
 
     const out: string[] = [];
+    const { server } = result;
     out.push(`## vexyo — MCP spec ${result.specVersion}`, '');
     out.push('| Check | Result |', '| --- | --- |');
+    out.push(
+      `| Server | ${server.serverInfo.name} ${server.serverInfo.version} ` +
+        `(protocol ${server.negotiatedProtocolVersion}) |`,
+    );
     out.push(`| Conformance | ${conformanceSummary(conformance)} |`);
     if (regression.length > 0) {
       out.push(`| Schema drift | ${count(drift.schema.length)} |`);
@@ -36,6 +41,13 @@ export const markdownReporter: Reporter = {
       out.push(
         `| Coverage drift | ${drift.added.length > 0 ? '⚠️' : '✅'} ${drift.added.length} new · ` +
           `${drift.removed.length > 0 ? '❌' : '✅'} ${drift.removed.length} removed |`,
+      );
+    }
+    if (server.negotiatedProtocolVersion !== result.specVersion) {
+      out.push(
+        '',
+        `**⚠️ Negotiated protocol ${server.negotiatedProtocolVersion} differs from the targeted ` +
+          `spec ${result.specVersion} — findings may reflect the version gap, not real violations.**`,
       );
     }
     out.push('', `**Exit code: ${result.exitCode}**`);

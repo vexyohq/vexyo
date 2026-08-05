@@ -5,6 +5,11 @@ import { jsonReporter } from './json';
 function sampleResult(): RunResult {
   return {
     outcome: 'completed',
+    server: {
+      negotiatedProtocolVersion: '2025-11-25',
+      serverInfo: { name: 'sample-server', version: '1.0.0' },
+      capabilities: { tools: {} },
+    },
     specVersion: '2025-11-25',
     target: { transport: 'stdio', description: 'stdio: node server.js' },
     startedAt: '2026-01-01T00:00:00.000Z',
@@ -36,6 +41,11 @@ describe('jsonReporter', () => {
     expect(parsed.results[0]?.ruleId).toBe('discovery/tools-list-available');
     expect(parsed.exitCode).toBe(0);
     expect(parsed.outcome).toBe('completed');
+    expect(parsed.server).toEqual({
+      negotiatedProtocolVersion: '2025-11-25',
+      serverInfo: { name: 'sample-server', version: '1.0.0' },
+      capabilities: { tools: {} },
+    });
   });
 
   it('passes captured server stderr through when present', () => {

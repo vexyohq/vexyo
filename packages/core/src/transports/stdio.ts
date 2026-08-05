@@ -2,6 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { BRAND } from '../brand';
 import { TargetConnectionError } from './errors';
+import { captureNegotiatedProtocolVersion } from './protocol-version';
 import { createStderrTail } from './stderr';
 import type { ConnectedClient, StdioTargetConfig } from './types';
 
@@ -35,6 +36,8 @@ export async function connectStdio(target: StdioTargetConfig): Promise<Connected
   const tail = createStderrTail();
   transport.stderr?.on('data', (chunk: Buffer) => tail.append(chunk));
 
+  const negotiatedProtocolVersion = captureNegotiatedProtocolVersion(transport, 'stdio target');
+
   const client = new Client(
     { name: `${BRAND.name}-probe`, version: '0.0.0' },
     { capabilities: {} },
@@ -62,6 +65,7 @@ export async function connectStdio(target: StdioTargetConfig): Promise<Connected
   return {
     client,
     transport: { kind: 'stdio' },
+    negotiatedProtocolVersion: negotiatedProtocolVersion(),
     serverStderr: () => tail.snapshot(),
     close: async () => {
       await client.close();

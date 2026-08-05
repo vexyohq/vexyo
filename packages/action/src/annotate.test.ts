@@ -5,6 +5,11 @@ import { annotate } from './annotate';
 function result(): RunResult {
   return {
     outcome: 'completed',
+    server: {
+      negotiatedProtocolVersion: '2025-11-25',
+      serverInfo: { name: 'sample-server', version: '1.0.0' },
+      capabilities: { tools: {} },
+    },
     specVersion: '2025-11-25',
     target: { transport: 'stdio', description: 'x' },
     startedAt: 'a',

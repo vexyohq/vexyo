@@ -5,6 +5,11 @@ import { junitReporter } from './junit';
 function sampleResult(): RunResult {
   return {
     outcome: 'completed',
+    server: {
+      negotiatedProtocolVersion: '2025-11-25',
+      serverInfo: { name: 'sample-server', version: '1.0.0' },
+      capabilities: { tools: {} },
+    },
     specVersion: '2025-11-25',
     target: { transport: 'stdio', description: 'stdio: node server.js' },
     startedAt: '2026-01-01T00:00:00.000Z',

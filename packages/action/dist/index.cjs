@@ -46534,6 +46534,24 @@ var TargetConnectionError = class extends Error {
   }
 };
 
+// ../core/src/transports/protocol-version.ts
+function captureNegotiatedProtocolVersion(transport, targetLabel) {
+  let negotiated;
+  const existing = transport.setProtocolVersion?.bind(transport);
+  transport.setProtocolVersion = (version2) => {
+    negotiated = version2;
+    existing?.(version2);
+  };
+  return () => {
+    if (negotiated === void 0) {
+      throw new Error(
+        `BUG: the MCP SDK completed the initialize handshake without reporting a negotiated protocol version (${targetLabel}). This vexyo build is incompatible with the installed @modelcontextprotocol/sdk version \u2014 please file an issue.`
+      );
+    }
+    return negotiated;
+  };
+}
+
 // ../core/src/transports/http.ts
 async function connectHttp(target) {
   let url2;
@@ -46545,6 +46563,7 @@ async function connectHttp(target) {
   const transport = new StreamableHTTPClientTransport(url2, {
     requestInit: target.headers ? { headers: target.headers } : void 0
   });
+  const negotiatedProtocolVersion = captureNegotiatedProtocolVersion(transport, "http target");
   const client = new Client(
     { name: `${BRAND.name}-probe`, version: "0.0.0" },
     { capabilities: {} }
@@ -46565,6 +46584,7 @@ async function connectHttp(target) {
   return {
     client,
     transport: { kind: "http", sessionId: transport.sessionId },
+    negotiatedProtocolVersion: negotiatedProtocolVersion(),
     close: async () => {
       await client.close();
     }
@@ -46814,6 +46834,7 @@ async function connectStdio(target) {
   });
   const tail = createStderrTail();
   transport.stderr?.on("data", (chunk) => tail.append(chunk));
+  const negotiatedProtocolVersion = captureNegotiatedProtocolVersion(transport, "stdio target");
   const client = new Client(
     { name: `${BRAND.name}-probe`, version: "0.0.0" },
     { capabilities: {} }
@@ -46836,6 +46857,7 @@ async function connectStdio(target) {
   return {
     client,
     transport: { kind: "stdio" },
+    negotiatedProtocolVersion: negotiatedProtocolVersion(),
     serverStderr: () => tail.snapshot(),
     close: async () => {
       await client.close();
@@ -46863,6 +46885,7 @@ async function runSuite(opts) {
   const rules = rulesForSpecVersion(opts.specVersion);
   const target = describeTarget(opts.target);
   const conn = await connectTarget(opts.target);
+  const server = serverIdentity(conn);
   let results;
   try {
     const ctx = {
@@ -46883,6 +46906,7 @@ async function runSuite(opts) {
   const stderr = conn.serverStderr?.();
   return {
     outcome: "completed",
+    server,
     specVersion: opts.specVersion,
     target,
     startedAt,
@@ -46891,6 +46915,17 @@ async function runSuite(opts) {
     summary: summarizeResults(results),
     exitCode: computeExitCode(results, failOn),
     ...stderr && stderr.text !== "" ? { serverStderr: stderr } : {}
+  };
+}
+function serverIdentity(conn) {
+  const instructions = conn.client.getInstructions();
+  return {
+    negotiatedProtocolVersion: conn.negotiatedProtocolVersion,
+    // The getters are always set after a successful connect; the fallbacks are
+    // unreachable and exist only to satisfy the `| undefined` return types.
+    serverInfo: conn.client.getServerVersion() ?? { name: "", version: "" },
+    capabilities: conn.client.getServerCapabilities() ?? {},
+    ...instructions !== void 0 ? { instructions } : {}
   };
 }
 async function runRules(ctx, rules) {
@@ -47689,14 +47724,24 @@ var markdownReporter = {
     const regression = result.results.filter((r) => r.category === "regression");
     const drift2 = classifyRegression(regression);
     const out = [];
+    const { server } = result;
     out.push(`## vexyo \u2014 MCP spec ${result.specVersion}`, "");
     out.push("| Check | Result |", "| --- | --- |");
+    out.push(
+      `| Server | ${server.serverInfo.name} ${server.serverInfo.version} (protocol ${server.negotiatedProtocolVersion}) |`
+    );
     out.push(`| Conformance | ${conformanceSummary(conformance)} |`);
     if (regression.length > 0) {
       out.push(`| Schema drift | ${count(drift2.schema.length)} |`);
       out.push(`| Behavioral drift | ${count(drift2.behavioral.length)} |`);
       out.push(
         `| Coverage drift | ${drift2.added.length > 0 ? "\u26A0\uFE0F" : "\u2705"} ${drift2.added.length} new \xB7 ${drift2.removed.length > 0 ? "\u274C" : "\u2705"} ${drift2.removed.length} removed |`
+      );
+    }
+    if (server.negotiatedProtocolVersion !== result.specVersion) {
+      out.push(
+        "",
+        `**\u26A0\uFE0F Negotiated protocol ${server.negotiatedProtocolVersion} differs from the targeted spec ${result.specVersion} \u2014 findings may reflect the version gap, not real violations.**`
       );
     }
     out.push("", `**Exit code: ${result.exitCode}**`);

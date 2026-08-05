@@ -35,6 +35,11 @@ function runResult(results: RuleResult[]): RunResult {
   }
   return {
     outcome: 'completed',
+    server: {
+      negotiatedProtocolVersion: '2025-11-25',
+      serverInfo: { name: 'sample-server', version: '1.0.0' },
+      capabilities: { tools: {} },
+    },
     specVersion: '2025-11-25',
     target: { transport: 'stdio', description: 'stdio: node server.js' },
     startedAt: '2026-01-01T00:00:00.000Z',
@@ -64,6 +69,22 @@ describe('markdownReporter — green render', () => {
     );
     expect(out).not.toContain('### Failures & errors');
     expect(out).not.toContain('Skipped');
+  });
+
+  it('shows server identity in the overview table, even on a green run', () => {
+    const out = markdownReporter.format(runResult([rule({ ruleId: 'a', status: 'pass' })]));
+    expect(out).toContain('| Server | sample-server 1.0.0 (protocol 2025-11-25) |');
+    expect(out).not.toContain('Negotiated protocol');
+  });
+
+  it('calls out a version mismatch, including on a green run', () => {
+    const result = runResult([rule({ ruleId: 'a', status: 'pass' })]);
+    result.server = { ...result.server, negotiatedProtocolVersion: '2025-03-26' };
+    const out = markdownReporter.format(result);
+    expect(out).toContain('| Server | sample-server 1.0.0 (protocol 2025-03-26) |');
+    expect(out).toContain(
+      'Negotiated protocol 2025-03-26 differs from the targeted spec 2025-11-25',
+    );
   });
 });
 
